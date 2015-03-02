@@ -21,6 +21,22 @@
 
 #define RABBIT	128
 
+#define ROTL32(v, n)	((v << n) | (v >> (32 - n)))
+
+// Selecting the byte order
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define U32TO32(x)								\
+	((x << 24) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | (x >> 24))
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define U32TO32(x)	(x)
+#else
+#error unsuported byte order
+#endif
+
+#define U8TO32_LITTLE(p) 					  \
+	(((uint32_t)((p)[0])      ) | ((uint32_t)((p)[1]) << 8) | \
+	 ((uint32_t)((p)[2]) << 16) | ((uint32_t)((p)[3]) << 24))
+
 // G-func the RABBIT-128 algorithm. The upper 32 bits XOR the lower 32 bits
 #define G_FUNC(x, y) {						  \
 	uint32_t a, b, h;					  \
@@ -209,7 +225,7 @@ rabbit_set_key_and_iv(struct rabbit_context *ctx, const uint8_t *key, const int 
 void
 rabbit_encrypt(struct rabbit_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
 {
-	uint8_t temp[16];
+	uint32_t keystream[4];
 	int i;
 	
 	for(; buflen >= 16; buflen -= 16, buf += 16, out += 16) {
@@ -228,17 +244,13 @@ rabbit_encrypt(struct rabbit_context *ctx, const uint8_t *buf, uint32_t buflen, 
 	if(buflen) {
 		rabbit_next_state(ctx);
 		
-		*(uint32_t *)(temp +  0) = U32TO32((ctx->x[0] ^ (ctx->x[5] >> 16) ^ 
-			(ctx->x[3] << 16)));
-		*(uint32_t *)(temp +  4) = U32TO32((ctx->x[2] ^ (ctx->x[7] >> 16) ^
-			(ctx->x[5] << 16)));
-		*(uint32_t *)(temp +  8) = U32TO32((ctx->x[4] ^ (ctx->x[1] >> 16) ^ 
-			(ctx->x[7] << 16)));
-		*(uint32_t *)(temp + 12) = U32TO32((ctx->x[6] ^ (ctx->x[3] >> 16) ^ 
-			(ctx->x[1] << 16)));
+		keystream[0] = U32TO32((ctx->x[0] ^ (ctx->x[5] >> 16) ^ (ctx->x[3] << 16)));
+		keystream[1] = U32TO32((ctx->x[2] ^ (ctx->x[7] >> 16) ^ (ctx->x[5] << 16)));
+		keystream[2] = U32TO32((ctx->x[4] ^ (ctx->x[1] >> 16) ^ (ctx->x[7] << 16)));
+		keystream[3] = U32TO32((ctx->x[6] ^ (ctx->x[3] >> 16) ^ (ctx->x[1] << 16)));
 
 		for(i = 0; i < buflen; i++)
-			out[i] = buf[i] ^ temp[i];	
+			out[i] = buf[i] ^ ((uint8_t *)keystream)[i];	
 	}
 }
 
@@ -253,21 +265,16 @@ rabbit_decrypt(struct rabbit_context *ctx, const uint8_t *buf, uint32_t buflen, 
 void
 rabbit_test_vectors(struct rabbit_context *ctx)
 {
-	uint8_t keystream[16];
+	uint32_t keystream[4];
 	int i;
 
 	rabbit_next_state(ctx);
 	
-	U32TO8_LITTLE((keystream +  0), (ctx->x[0] ^ (ctx->x[5] >> 16) ^ (ctx->x[3] << 16)));
-	U32TO8_LITTLE((keystream +  4), (ctx->x[2] ^ (ctx->x[7] >> 16) ^ (ctx->x[5] << 16)));
-	U32TO8_LITTLE((keystream +  8), (ctx->x[4] ^ (ctx->x[1] >> 16) ^ (ctx->x[7] << 16)));
-	U32TO8_LITTLE((keystream + 12), (ctx->x[6] ^ (ctx->x[3] >> 16) ^ (ctx->x[1] << 16)));
+	keystream[0] = U32TO32((ctx->x[0] ^ (ctx->x[5] >> 16) ^ (ctx->x[3] << 16)));
+	keystream[1] = U32TO32((ctx->x[2] ^ (ctx->x[7] >> 16) ^ (ctx->x[5] << 16)));
+	keystream[2] = U32TO32((ctx->x[4] ^ (ctx->x[1] >> 16) ^ (ctx->x[7] << 16)));
+	keystream[3] = U32TO32((ctx->x[6] ^ (ctx->x[3] >> 16) ^ (ctx->x[1] << 16)));
 
-	//*(uint32_t *)(keystream +  0) = U32TO32((ctx->x[0] ^ (ctx->x[5] >> 16) ^ (ctx->x[3] << 16)));
-	//*(uint32_t *)(keystream +  4) = U32TO32((ctx->x[2] ^ (ctx->x[7] >> 16) ^ (ctx->x[5] << 16)));
-	//*(uint32_t *)(keystream +  8) = U32TO32((ctx->x[4] ^ (ctx->x[1] >> 16) ^ (ctx->x[7] << 16)));
-	//*(uint32_t *)(keystream + 12) = U32TO32((ctx->x[6] ^ (ctx->x[3] >> 16) ^ (ctx->x[1] << 16)));
-	
 	printf("\n Test vectors for the Rabbit:\n");
 
 	printf("\nKey:       ");
@@ -282,8 +289,8 @@ rabbit_test_vectors(struct rabbit_context *ctx)
 	
 	printf("\nKeystream: ");
 	
-	for(i = 0; i < 16; i++)
-		printf("%02x ", keystream[i]);
+	for(i = 0; i < 4; i++)
+		PRINT_U32TO32(keystream[i]);
 	
 	printf("\n\n");
 }
