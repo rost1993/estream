@@ -1,0 +1,59 @@
+CC=gcc
+CFLAGS=-Wall -O3
+LIB=../src
+
+GRAIN_OBJS=$(LIB)/grain.o grain_speed_test.o
+HC128_OBJS=$(LIB)/hc128.o hc128_speed_test.o
+MICKEY_OBJS=$(LIB)/mickey.o mickey_speed_test.o
+RABBIT_OBJS=$(LIB)/rabbit.o rabbit_speed_test.o
+SALSA_OBJS=$(LIB)/salsa.o salsa_speed_test.o
+SOSEMANUK_OBJS=$(LIB)/sosemanuk.o sosemanuk_speed_test.o
+TRIVIUM_OBJS=$(LIB)/trivium.o trivium_speed_test.o
+
+GRAIN=grain_speed_test
+HC128=hc128_speed_test
+MICKEY=mickey_speed_test
+RABBIT=rabbit_speed_test
+SALSA=salsa_speed_test
+SOSEMANUK=sosemanuk_speed_test
+TRIVIUM=trivium_speed_test
+
+all: $(GRAIN) $(HC128) $(MICKEY) $(RABBIT) $(SALSA) $(SOSEMANUK) $(TRIVIUM)
+
+.c.o:
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+$(GRAIN): $(GRAIN_OBJS)
+	$(CC) $(CFALGS) -o $@ $^
+
+$(HC128): $(HC128_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(MICKEY): $(MICKEY_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(RABBIT): $(RABBIT_OBJS)
+	$(CC) $(CFALGS) -o $@ $^
+
+$(SALSA): $(SALSA_OBJS)
+	$(CC) $(CFALGS) -o $@ $^
+
+$(SOSEMANUK): $(SOSEMANUK_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(TRIVIUM): $(TRIVIUM_OBJS)
+	$(CC) $(CFALGS) -o $@ $^
+
+clean:
+	rm -f *.o $(LIB)/*.o
+	rm -f $(GRAIN) $(HC128) $(MICKEY) $(RABBIT) $(SALSA) $(SOSEMANUK) $(TRIVIUM)
+
+.PHONY: test
+test:
+	./$(GRAIN)
+	./$(HC128)
+	./$(MICKEY)
+	./$(RABBIT)
+	./$(SALSA)
+	./$(SOSEMANUK)
+	./$(TRIVIUM)
