@@ -13,6 +13,7 @@ all: $(LIBESTREAM)
 
 $(LIBESTREAM): $(LIBESTREAM_OBJS)
 	$(CC) $(CFLAGS_SO) -o $@ $^
+	rm -f $(LIB)/*.o
 
 clean:
-	rm -f *.o $(LIB)/*.o $(LIBESTREAM)
+	rm -f $(LIB)/*.o $(LIBESTREAM)
