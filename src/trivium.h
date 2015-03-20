@@ -1,15 +1,29 @@
-/* This library implements the Trivium algorithm
+/* 
+ * This library implements the Trivium algorithm
  * Author - Christophe De Canniere and Bart Preneel, Katholieke Universiteit Leuven
  * Trivium - the winner eSTREAM. Home page - http://www.ecrypt.eu.org/stream/
 */
 
-#ifndef TRIVIUM_H_
-#define TRIVIUM_H_
+#ifndef TRIVIUM_H
+#define TRIVIUM_H
 
-struct trivium_context;
+/* 
+ * Trivium context 
+ * keylen - chiper key length in bytes
+ * ivlen - vector initialization length in bytes
+ * key - chiper key
+ * iv - initialization vector
+ * w - array of intermediate calculations
+*/
+struct trivium_context {
+	int keylen;
+	int ivlen;
+	uint8_t key[10];
+	uint8_t iv[10];
+	uint32_t w[10];
+};
 
-struct trivium_context *trivium_context_new(void);
-void trivium_context_free(struct trivium_context **ctx);
+void trivium_init(struct trivium_context *ctx);
 
 int trivium_set_key_and_iv(struct trivium_context *ctx, const uint8_t *key, const int keylen, const uint8_t iv[10], const int ivlen);
 

@@ -39,45 +39,12 @@
 #define OUTBIT(b, s) 									\
 	(b[2] ^ b[15] ^ b[36] ^ b[45] ^ b[64] ^ b[73] ^ b[89] ^ H(b, s) ^ s[93])
 
-/*
- * Grain context
- * keylen - chiper key length in bits
- * ivlen - vector initialization length in bits
- * key - chiper key
- * iv - initialization vector
- * b - register NFSR
- * s - register LFSR
-*/
-struct grain_context {
-	int keylen;
-	int ivlen;
-	uint8_t key[16];
-	uint8_t iv[12];
-	uint8_t b[128];
-	uint8_t s[128];
-};
 
-// Allocates memory for the grain_context
-struct grain_context *
-grain_context_new(void)
-{
-	struct grain_context *ctx;
-	ctx = (struct grain_context *)malloc(sizeof(*ctx));
-
-	if(ctx == NULL)
-		return NULL;
-	
-	memset(ctx, 0, sizeof(*ctx));
-
-	return ctx;
-}
-
-// Delete grain_context
+// Grain initialization function
 void
-grain_context_free(struct grain_context **ctx)
+grain_init(struct grain_context *ctx)
 {
-	free(*ctx);
-	*ctx = NULL;
+	memset(ctx, 0, sizeof(*ctx));
 }
 
 // Keystream generation function

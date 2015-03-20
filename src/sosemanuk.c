@@ -389,49 +389,12 @@ uint32_t mul_ia[] = {
 	0x9EE2651C, 0x86ED25D1, 0xAEFCE52F, 0xB6F3A5E2
 };
 
-/*
- * Sosemanuk context
- * keylen - chipher key length in bytes
- * ivlen - vector initialization length in bytes
- * key - chiper key
- * iv - initialization vector
- * sk - array subkey for Serpent24
- * s - array internal cipher state
- * r1 - internal cipher state
- * r2 - internal cipher state
-*/
-struct sosemanuk_context {
-	int keylen;
-	int ivlen;
-	uint8_t key[32];
-	uint8_t iv[16];
-	uint32_t sk[100];
-	uint32_t s[10];
-	uint32_t r1;
-	uint32_t r2;
-};
 
-// Allocates memory for the sosemanuk_context
-struct sosemanuk_context *
-sosemanuk_context_new(void)
-{
-	struct sosemanuk_context *ctx;
-	ctx = (struct sosemanuk_context *)malloc(sizeof(*ctx));
-
-	if(ctx == NULL)
-		return NULL;
-	
-	memset(ctx, 0, sizeof(*ctx));
-
-	return ctx;
-}
-
-// Delete sosemanuk_context
+// Sosemanuk initialization function
 void
-sosemanuk_context_free(struct sosemanuk_context **ctx)
+sosemanuk_init(struct sosemanuk_context *ctx)
 {
-	free(*ctx);
-	*ctx = NULL;
+	memset(ctx, 0, sizeof(*ctx));
 }
 
 // IV injection: using a block cipher Serpent24. Output is used 12th, 18th and 24th rounds Serpent24
@@ -679,6 +642,7 @@ sosemanuk_decrypt(struct sosemanuk_context *ctx, const uint8_t *buf, uint32_t bu
 	sosemanuk_encrypt(ctx, buf, buflen, out);
 }
 
+// Test vactors print function
 void
 sosemanuk_test_vectors(struct sosemanuk_context *ctx)
 {

@@ -40,46 +40,11 @@
 #define A6	A0
 #define A7	A1
 
-/* RABBIT-128 context
- * keylen - chiper key length in bytes
- * ivlen - vector initializaton length in bytes
- * key - chiper key
- * iv - initialization vector
- * x - the state variables
- * c - the counter system  
- * carry - 513 bit, the internal state
-*/
-struct rabbit_context {
-	int keylen;
-	int ivlen;
-	uint8_t key[16];
-	uint8_t iv[8];
-	uint32_t x[8];
-	uint32_t c[8];
-	uint32_t carry;
-};
-
-// Allocates memory for the RABBIT context
-struct rabbit_context *
-rabbit_context_new(void)
-{
-	struct rabbit_context *ctx;
-	ctx = (struct rabbit_context *)malloc(sizeof(*ctx));
-
-	if(ctx == NULL)
-		return NULL;
-	
-	memset(ctx, 0, sizeof(*ctx));
-	
-	return ctx;
-}
-
-// Delete RABBIT context
+// Rabbit initialization function
 void
-rabbit_context_free(struct rabbit_context **ctx)
+rabbit_init(struct rabbit_context *ctx)
 {
-	free(*ctx);
-	*ctx = NULL;
+	memset(ctx, 0, sizeof(*ctx));
 }
 
 // Calculate the next internal state

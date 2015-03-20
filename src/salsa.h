@@ -4,13 +4,26 @@
  * SALSA20 - the winner eSTREAM. Home page - http://www.ecrypt.eu.org/stream/.
 */
 
-#ifndef SALSA_H_
-#define SALSA_H_
+#ifndef SALSA_H
+#define SALSA_H
 
-struct salsa_context;
+/* 
+ * Salsa context
+ * keylen - chiper key length in bytes
+ * ivlen - vector initialization length in bytes
+ * key - chiper key
+ * iv - 16-byte array with a unique number. 8 bytes are filled by the user
+ * x - intermediate array
+*/
+struct salsa_context {
+	int keylen;
+	int ivlen;
+	uint8_t key[32];
+	uint8_t iv[16];
+	uint32_t x[16];
+};
 
-struct salsa_context *salsa_context_new(void);
-void salsa_context_free(struct salsa_context **ctx);
+void salsa_init(struct salsa_context *ctx);
 
 int salsa_set_key_and_iv(struct salsa_context *ctx, const uint8_t *key, const int keylen, const uint8_t iv[8], const int ivlen);
 

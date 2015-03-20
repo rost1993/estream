@@ -65,43 +65,11 @@
 	UPDATE(w);			\
 }
 
-/* 
- * Trivium context 
- * keylen - chiper key length in bytes
- * ivlen - vector initialization length in bytes
- * key - chiper key
- * iv - initialization vector
- * w - array of intermediate calculations
-*/
-struct trivium_context {
-	int keylen;
-	int ivlen;
-	uint8_t key[10];
-	uint8_t iv[10];
-	uint32_t w[10];
-};
-
-// Allocates memory for the trivium context
-struct trivium_context *
-trivium_context_new(void)
-{
-	struct trivium_context *ctx;
-	ctx = (struct trivium_context *)malloc(sizeof(*ctx));
-
-	if(ctx == NULL)
-		return NULL;
-	
-	memset(ctx, 0, sizeof(*ctx));
-
-	return ctx;
-}
-
-// Delete trivium context
+// Trivium initialization function
 void
-trivium_context_free(struct trivium_context **ctx)
+trivium_init(struct trivium_context *ctx)
 {
-	free(*ctx);
-	*ctx = NULL;
+	memset(ctx, 0, sizeof(*ctx));
 }
 
 // Function key and iv setup
@@ -113,11 +81,6 @@ trivium_keysetup(struct trivium_context *ctx)
 	int i;
 
 	memset(s, 0, sizeof(s));
-
-	/*for(i = 0; i < 10; i++) {
-		s[i] = ctx->key[i];
-		s[i + 12] = ctx->iv[i];
-	}*/
 
 	for(i = 0; i < ctx->keylen; i++)
 		s[i] = ctx->key[i];
