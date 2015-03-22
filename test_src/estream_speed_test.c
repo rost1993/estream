@@ -1,3 +1,10 @@
+/*
+ * This program tests the algorithms eSTREAM project to speed perfomance
+ * Makefile: Makefile_speed
+ * Compile: make -f Makefile_speed
+ * Example: ./estream_speed_test -h ./estream_speed_test -a 1 
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -8,12 +15,14 @@
 
 #define BUFLEN		100000000
 
+// Struct for time value
 struct timeval t1, t2;
 
 uint8_t buf[BUFLEN];
 uint8_t out1[BUFLEN];
 uint8_t out2[BUFLEN];
 
+// Secret key
 uint8_t key[32] = { 0x00, 0x11, 0x22, 0x33,
 		    0x44, 0x55, 0x66, 0x77,
 		    0x88, 0x99, 0xAA, 0xBB,
@@ -23,17 +32,20 @@ uint8_t key[32] = { 0x00, 0x11, 0x22, 0x33,
 		    0x88, 0x99, 0xAA, 0xBB,
 		    0xCC, 0xDD, 0xEE, 0xFF };
 
+// Vector initilization
 uint8_t iv[16] = { 0x01, 0x23, 0x45, 0x67,
 		   0x89, 0xAB, 0xCD, 0xEF,
 		   0x01, 0x23, 0x45, 0x67,
 		   0x89, 0xAB, 0xCD, 0xEF };
 
+// Time start
 static void
 time_start(void)
 {
 	gettimeofday(&t1, NULL);
 }
 
+// Time stop
 static uint32_t
 time_stop(void)
 {
@@ -50,6 +62,7 @@ time_stop(void)
 	return (t2.tv_sec * 1000 + t2.tv_usec/1000);
 }
 
+// Interface to the library salsa.h
 static void
 salsa(void)
 {
@@ -78,6 +91,7 @@ salsa(void)
 	printf("\nRun time Salsa of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
+// Interface to the library rabbit.h
 static void
 rabbit(void)
 {
@@ -106,6 +120,7 @@ rabbit(void)
 	printf("\nRun time Rabbit of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
+// Interface to the library hc128.h
 static void
 hc128(void)
 {
@@ -134,6 +149,7 @@ hc128(void)
 	printf("\nRun time HC128 of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
+// Interface to the library sosemanuk.h
 static void
 sosemanuk(void)
 {
@@ -162,6 +178,7 @@ sosemanuk(void)
 	printf("\nRun time Sosemanuk of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
+// Interface to the library grain.h
 static void
 grain(void)
 {
@@ -190,6 +207,7 @@ grain(void)
 	printf("\nRun time Grain of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
+// Interface to the mickey.h
 static void
 mickey(void)
 {
@@ -218,6 +236,7 @@ mickey(void)
 	printf("\nRun time Mickey of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
+// Interface to the trivium.h
 static void
 trivium(void)
 {
@@ -246,6 +265,7 @@ trivium(void)
 	printf("\nRun time Trivium of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
+// Manual
 static void
 help(void)
 {
@@ -274,6 +294,7 @@ main(int argc, char *argv[])
 		return 0;
 	}
 	
+	// Parse argument
 	while((res = getopt_long(argc, argv, "a:h", long_option, 0)) != -1) {
 		switch(res) {
 		case 'h' : help();
@@ -283,6 +304,7 @@ main(int argc, char *argv[])
 		}
 	}
 
+	// Select argument
 	switch(alg) {
 	case 1 : salsa();
 		 break;
