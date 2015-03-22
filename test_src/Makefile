@@ -1,9 +1,6 @@
 CC=gcc
-CFLAGS=-I ../src -Wall -O3 -fPIC
-CFLAGS_SO=-I ../src -Wall -O3 -shared
+CFLAGS=-I ../src -Wall -O3
 SRC=../src
-
-
 
 LIBESTREAM_OBJS=$(patsubst %, $(SRC)/%, grain.o hc128.o mickey.o rabbit.o salsa.o sosemanuk.o trivium.o)
 ESTREAM_SPEED_TEST_OBJS=estream_speed_test.o
@@ -14,10 +11,11 @@ ESTREAM_SPEED_TEST=estream_speed_test
 all: $(LIBESTREAM) $(ESTREAM_SPEED_TEST)
 
 .c.o:
-	$(CC) $(CFLAGS) -c $^ -o $@
+	$(CC) $(CFLAGS) -fPIC -c $^ -o $@
 
 $(LIBESTREAM): $(LIBESTREAM_OBJS)
-	$(CC) $(CFLAGS_SO) -o $@ $^
+	$(CC) $(CFLAGS) -shared -o $@ $^
+	rm -f $(SRC)/*.o
 
 $(ESTREAM_SPEED_TEST): $(ESTREAM_SPEED_TEST_OBJS) 
 	$(CC) $(CFLAGS) -L./ -lestream -Wl,-rpath,. -o $@ $^

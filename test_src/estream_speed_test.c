@@ -4,7 +4,7 @@
 #include <getopt.h>
 #include <sys/time.h>
 
-#include "../src/estream.h"
+#include "estream.h"
 
 #define BUFLEN		100000000
 
@@ -50,7 +50,7 @@ time_stop(void)
 	return (t2.tv_sec * 1000 + t2.tv_usec/1000);
 }
 
-void
+static void
 salsa(void)
 {
 	struct salsa_context ctx;
@@ -78,7 +78,7 @@ salsa(void)
 	printf("\nRun time Salsa of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
-void
+static void
 rabbit(void)
 {
 	struct rabbit_context ctx;
@@ -106,7 +106,7 @@ rabbit(void)
 	printf("\nRun time Rabbit of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
-void
+static void
 hc128(void)
 {
 	struct hc128_context ctx;
@@ -134,7 +134,7 @@ hc128(void)
 	printf("\nRun time HC128 of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
-void
+static void
 sosemanuk(void)
 {
 	struct sosemanuk_context ctx;
@@ -162,7 +162,7 @@ sosemanuk(void)
 	printf("\nRun time Sosemanuk of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
-void
+static void
 grain(void)
 {
 	struct grain_context ctx;
@@ -190,7 +190,7 @@ grain(void)
 	printf("\nRun time Grain of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
-void
+static void
 mickey(void)
 {
 	struct mickey_context ctx;
@@ -218,7 +218,7 @@ mickey(void)
 	printf("\nRun time Mickey of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
-void
+static void
 trivium(void)
 {
 	struct trivium_context ctx;
@@ -246,7 +246,7 @@ trivium(void)
 	printf("\nRun time Trivium of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
-void
+static void
 help(void)
 {
 	printf("\nThis program provides the user interface for testing algorithms project eSTREAM on speed test!\n");
