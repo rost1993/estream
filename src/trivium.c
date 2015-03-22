@@ -18,7 +18,7 @@
 #include "trivium.h"
 #include "macro.h"
 
-#define TRIVIUM		80
+#define TRIVIUM		10
 
 // Macros bit allocation
 #define S64(a, b, c)	((a << (96 - c))  | (b >> (c - 64)))
