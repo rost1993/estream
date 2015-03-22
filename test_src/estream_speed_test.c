@@ -137,7 +137,7 @@ hc128(void)
 void
 sosemanuk(void)
 {
-	struct sosemanuk_context *ctx;
+	struct sosemanuk_context ctx;
 	
 	time_start();
 
