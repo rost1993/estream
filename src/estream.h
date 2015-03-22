@@ -1,5 +1,5 @@
-#define ESTREAM_H
 #ifndef ESTREAM_H
+#define ESTREAM_H
 
 #include "salsa.h"
 #include "rabbit.h"
