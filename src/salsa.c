@@ -144,7 +144,7 @@ salsa20(struct salsa_context *ctx, uint32_t *keystream)
 	}
 	
 	for(i = 0; i < 16; i++)
-		keystream[i] = U32TO32(z[i] + ctx->x[i]);
+		keystream[i] = U32TO32((z[i] + ctx->x[i]));
 }
 
 /* 
