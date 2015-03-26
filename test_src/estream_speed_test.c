@@ -283,6 +283,9 @@ main(int argc, char *argv[])
 {
 	int res, alg = 0;
 
+	// Array pointer to the function encrypt/decrypt
+	void (*p[7])(void) = { salsa, rabbit, hc128, sosemanuk, grain, mickey, trivium };
+
 	const struct option long_option [] = {
 		{"algorithm", 1, NULL, 'a'},
 		{"help",      0, NULL, 'h'},
@@ -306,19 +309,21 @@ main(int argc, char *argv[])
 
 	// Select argument
 	switch(alg) {
-	case 1 : salsa();
+	case 1 : (*p[0])();
 		 break;
-	case 2 : rabbit();
+	case 2 : (*p[1])();
 		 break;
-	case 3 : hc128();
+	case 3 : (*p[2])();
 		 break;
-	case 4 : sosemanuk();
+	case 4 : (*p[3])();
 		 break;
-	case 5 : grain();
+	case 5 : (*p[4])();
 		 break;
-	case 6 : mickey();
+	case 6 : (*p[5])();
 		 break;
-	case 7 : trivium();
+	case 7 : (*p[6])();
+		 break;
+	default: printf("\nNo such algorithm!\n");
 		 break;
 	}
 	

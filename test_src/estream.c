@@ -24,7 +24,7 @@ int keylen;
 int ivlen;
 
 // Interface to the library salsa.h
-int
+static int
 salsa(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 {
 	struct salsa_context ctx;
@@ -45,7 +45,7 @@ salsa(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 }
 
 // Interface to the library rabbit.h
-int
+static int
 rabbit(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 {
 	struct rabbit_context ctx;
@@ -66,7 +66,7 @@ rabbit(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 }
 
 // Interface to the library sosemanuk.h
-int
+static int
 sosemanuk(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 {
 	struct sosemanuk_context ctx;
@@ -87,7 +87,7 @@ sosemanuk(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 }
 
 // Interface to the library hc128.h
-int
+static int
 hc128(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 {
 	struct hc128_context ctx;
@@ -108,7 +108,7 @@ hc128(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 }
 
 // Interface to the library grain.h
-int
+static int
 grain(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 {
 	struct grain_context ctx;
@@ -129,7 +129,7 @@ grain(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 }
 
 // Interface to the library mickey.h
-int
+static int
 mickey(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 {
 	struct mickey_context ctx;
@@ -150,7 +150,7 @@ mickey(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 }
 
 // Interface to the library trivium.h
-int
+static int
 trivium(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
 {
 	struct trivium_context ctx;
@@ -201,6 +201,9 @@ main(int argc, char *argv[])
 	char in_file[MAX_FILE], out_file[MAX_FILE], k[256], v[256];
 	uint8_t *buf, *out;
 	int res, alg = 1;
+
+	// Array pointer to the function encrypt/decrypt
+	int (*p[7])(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out) = { salsa, rabbit, hc128, sosemanuk, grain, mickey, trivium };
 
 	const struct option long_option [] = {
 		{"help",      0, NULL, 'h'},
@@ -273,7 +276,7 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if(salsa(fp, fd, buf, out)) {
+		 if((*p[0])(fp, fd, buf, out)) {
 		 	printf("Salsa function failed with error!\n");
 			return 0;
 		   }
@@ -286,7 +289,7 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if(rabbit(fp, fd, buf, out)) {
+		 if((*p[1])(fp, fd, buf, out)) {
 		 	printf("Rabbit function failed with error!\n");
 			return 0;
 		 }
@@ -299,7 +302,7 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if(hc128(fp, fd, buf, out)) {
+		 if((*p[2])(fp, fd, buf, out)) {
 		   	printf("HC128 function failed with error!\n");
 			return 0;
 		 }
@@ -312,7 +315,7 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if(sosemanuk(fp, fd, buf, out)) {
+		 if((*p[3])(fp, fd, buf, out)) {
 		   	printf("Sosemanuk function failed with error!\n");
 			return 0;
 		 }
@@ -325,7 +328,7 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if(grain(fp, fd, buf, out)) {
+		 if((*p[4])(fp, fd, buf, out)) {
 		   	printf("Grain function failed with error!\n");
 			return 0;
 		 }
@@ -338,7 +341,7 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if(mickey(fp, fd, buf, out)) {
+		 if((*p[5])(fp, fd, buf, out)) {
 		   	printf("Mickey function failed with error!\n");
 			return 0;
 		 }
@@ -351,10 +354,12 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if(trivium(fp, fd, buf, out)) {
+		 if((*p[6])(fp, fd, buf, out)) {
 		   	printf("Trivium function failed with error!\n");
 			return 0;
 		 }
+		 break;
+	default: printf("\nNo such algorithm!\n");
 		 break;
 	}
 
