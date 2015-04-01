@@ -76,7 +76,9 @@ main(int argc, char *argv[])
 
 	memcpy(out, universe, funcsz);
 
-	if(mprotect(out, funcsz, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+	printf("%x - %x\n", funcsz, out);
+
+	if(mprotect(PAGE_ADDR(out, pagesize), PAGE_ALIGN(out, pagesize) + funcsz, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
 		printf("Mprotect error!\n");
 		exit(1);
 	}
