@@ -31,16 +31,17 @@ help(void)
 int
 main(int argc, char *argv[])
 {
+	struct salsa_context ctx;
 	char k[256];
 	uint8_t key[32], iv[8];
 	int res, funcsz, pagesize, keylen = 0;
-	uint8_t *out;
+	uint8_t *buf;
 	int (*func)(void);
 
 	const struct option long_option [] = {
 		{"help", 0, NULL, 'h'},
 		{"key",  1, NULL, 'k'},
-		{0, 0, 	    NULL,  0 }
+		{0,      0, NULL,  0 }
 	};
 
 	if(argc < 2) {
@@ -48,7 +49,7 @@ main(int argc, char *argv[])
 		return 0;
 	}
 
-	while((res = getopt_long(argc, argv, "k:h", long_option, 0)) != -1) {
+	while((res = getopt_long(argc, argv, "k:t:h", long_option, 0)) != -1) {
 		switch(res) {
 		case 'h' : help();
 		   	   return 0;
@@ -66,26 +67,35 @@ main(int argc, char *argv[])
 	
 	memcpy(key, k, keylen);
 
+	salsa_init(&ctx);
+
+	if(salsa_set_key_and_iv(&ctx, key, keylen, iv, 8)) {
+		printf("Filling salsa context error!\n");
+		exit(1);
+	}
+
 	pagesize = sysconf(_SC_PAGE_SIZE);
 	funcsz = (void *)universe_stop - (void *)universe;
 
-	if((out = malloc(funcsz)) == NULL) {
+	if((buf = malloc(PAGE_ALIGN(universe, pagesize) + funcsz)) == NULL) {
 		printf("Allocates memory error!\n");
 		exit(1);
 	}
 
-	memcpy(out, universe, funcsz);
+	memcpy(buf, universe, funcsz);
 
-	printf("%x - %x\n", funcsz, out);
-
-	if(mprotect(PAGE_ADDR(out, pagesize), PAGE_ALIGN(out, pagesize) + funcsz, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+	if(mprotect(PAGE_ADDR(buf, pagesize), PAGE_ALIGN(buf, pagesize) + funcsz, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
 		printf("Mprotect error!\n");
 		exit(1);
 	}
 
-	func = (void *)out;
+	salsa_encrypt(&ctx, buf, PAGE_ALIGN(buf, pagesize) + funcsz, buf);
+
+	func = (void *)buf;
 	printf("Result = %d\n", func());
 
+	free(buf);
+		
 	return 0;
 }
 
