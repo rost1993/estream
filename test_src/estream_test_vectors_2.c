@@ -181,19 +181,23 @@ void (*test[7])(void *) = { (void *)salsa_test_vectors,
 const int keylen[7] = { 32, 16, 16, 32, 16, 10, 10 };
 const int ivlen[7] = { 8, 8, 16, 16, 12, 10, 10 };
 
+union context {
+	struct salsa_context salsa;
+	struct rabbit_context rabbit;
+	struct hc128_context hc128;
+};
+
 void
-func(struct salsa_context ctx, int alg)
+func(void *ctx, int alg)
 {
-	//struct salsa_context ctx;
+	(*init[alg])(ctx);
 
-	(*init[alg])(&ctx);
-
-	if((*set[alg])(&ctx, key, keylen[alg], iv, ivlen[alg])) {
+	if((*set[alg])(ctx, key, keylen[alg], iv, ivlen[alg])) {
 		printf("Salsa context filling error!\n");
 		exit(1);
 	}
 
-	(*test[alg])(&ctx);
+	(*test[alg])(ctx);
 }
 
 int
@@ -225,35 +229,28 @@ main(int argc, char *argv[])
 		}
 	}
 	
-	struct salsa_context ctx;
-
+	union context temp;
+	
 	switch(alg) {
 	case 0 : //(*p[0])();
-		 //struct salsa_context ctx;
-		 func(ctx, alg);
+		 func((void *)temp.salsa, alg);
 		 break;
 	/*case 2 : //(*p[1])();
-		 struct rabbit_context rabbit;
 		 func(rabbit, alg);
 		 break;
 	case 3 : //(*p[2])();
-		 struct hc128_context hc128;
 		 func(hc128, alg);
 		 break;
 	case 4 : //(*p[3])();
-		 struct sosemanuk_context sosemanuk;
 		 func(sosemanuk, alg);
 		 break;
 	case 5 : //(*p[4])();
-		 struct grain_context grain;
 		 func(grain, alg);
 		 break;
 	case 6 : //(*p[5])();
-		 struct mickey_context mickey;
 		 func(mickey, alg);
 		 break;
 	case 7 : //(*p[6])();
-		 struct trivium_context trivium;
 		 func(trivium, alg);
 		 break;
 	default: printf("\nNo such algorithm!\n");
