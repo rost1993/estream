@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -8,14 +9,40 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+static void
+help(void)
+{
+	printf("Help!\n");
+}
+
 int
 main(int argc, char *argv[])
 {
-	int sd, sdc;
+	int sd, sdc, res;
 	char buf[256];
 	int size, i;
-
 	struct sockaddr_in sockaddr;
+
+	const struct option long_option[] = {
+		{"help", 0, NULL, 'h'},
+		{"ip",   1, NULL, 'i'},
+		{ 0, 	 0, NULL,  0 }
+	};
+	
+	if(argc < 2) {
+		help();
+		return 0;
+	}
+
+	while((res = getopt_long(argc, argv, "i:h", long_option, 0)) != -1) {
+		switch(res) {
+		case 'h' : return 0;
+		case 'i' : inet_pton(AF_INET, optarg, &sockaddr.sin_addr);
+			   break;
+		default: help();
+			 return 0;
+		}
+	}
 
 	if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		printf("Error! Socket failed!\n");
@@ -24,7 +51,6 @@ main(int argc, char *argv[])
 
 	sockaddr.sin_family = AF_INET;
 	sockaddr.sin_port = htons(4444);
-	inet_pton(AF_INET, "192.168.0.4", &sockaddr.sin_addr);
 
 	if(bind(sd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) == -1) {
 		printf("Bind error!\n");

@@ -14,7 +14,7 @@
 static void
 help(void)
 {
-
+	printf("Help!\n");
 }
 
 int
@@ -29,6 +29,11 @@ main(int argc, char *argv[])
 		{"ip",   1, NULL, 'i'},
 		{0, 	 0, NULL,  0 }
 	};
+	
+	if(argc < 2) {
+		help();
+		return 0;
+	}
 
 	while((res = getopt_long(argc, argv, "i:h", long_option, 0)) != -1) {
 		switch(res) {
@@ -36,6 +41,8 @@ main(int argc, char *argv[])
 			   break;
 		case 'h' : help();
 			   return 0;
+		default: help();
+			 return 0;
 		}
 	}
 
