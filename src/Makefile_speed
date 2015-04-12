@@ -1,8 +1,8 @@
 CC=gcc
-CFLAGS=-I ../src -Wall -O3
-SRC=../src
+CFLAGS=-I ../lib -Wall -O3
+LIB=../lib
 
-LIBESTREAM_OBJS=$(patsubst %, $(SRC)/%, grain.o hc128.o mickey.o rabbit.o salsa.o sosemanuk.o trivium.o)
+LIBESTREAM_OBJS=$(patsubst %, $(LIB)/%, grain.o hc128.o mickey.o rabbit.o salsa.o sosemanuk.o trivium.o)
 ESTREAM_SPEED_TEST_OBJS=estream_speed_test.o
 
 LIBESTREAM=libestream.so
@@ -15,10 +15,10 @@ all: $(LIBESTREAM) $(ESTREAM_SPEED_TEST)
 
 $(LIBESTREAM): $(LIBESTREAM_OBJS)
 	$(CC) $(CFLAGS) -shared -o $@ $^
-	rm -f $(SRC)/*.o
+	rm -f $(LIB)/*.o
 
 $(ESTREAM_SPEED_TEST): $(ESTREAM_SPEED_TEST_OBJS) 
 	$(CC) $(CFLAGS) -L./ -lestream -Wl,-rpath,. -o $@ $^
 
 clean:
-	rm -f $(SRC)/*.o *.o $(LIBESTREAM) $(ESTREAM_SPEED_TEST)
+	rm -f $(LIB)/*.o *.o $(LIBESTREAM) $(ESTREAM_SPEED_TEST)

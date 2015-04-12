@@ -1,8 +1,8 @@
 CC=gcc
-CFLAGS=-I ../src -Wall -O3
-SRC=../src
+CFLAGS=-I ../lib -Wall -O3
+LIB=../lib
 
-LIBESTREAM_OBJS=$(patsubst %, $(SRC)/%, grain.o hc128.o mickey.o rabbit.o salsa.o sosemanuk.o trivium.o)
+LIBESTREAM_OBJS=$(patsubst %, $(LIB)/%, grain.o hc128.o mickey.o rabbit.o salsa.o sosemanuk.o trivium.o)
 ESTREAM_OBJS=estream.o
 
 LIBESTREAM=libestream.so
@@ -15,10 +15,10 @@ all: $(LIBESTREAM) $(ESTREAM)
 
 $(LIBESTREAM): $(LIBESTREAM_OBJS)
 	$(CC) $(CFLAGS) -shared -o $@ $^
-	rm -f $(SRC)/*.o
+	rm -f $(LIB)/*.o
 
 $(ESTREAM): $(ESTREAM_OBJS)
 	$(CC) $(CFALGS) -L./ -lestream -Wl,-rpath,. -o $@ $^
 
 clean:
-	rm -f $(SRC)/*.o *.o $(LIBESTREAM) $(ESTREAM)
+	rm -f $(LIB)/*.o *.o $(LIBESTREAM) $(ESTREAM)
