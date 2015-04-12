@@ -64,25 +64,37 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if((sdc = accept(sd, NULL, 0)) == -1) {
-		printf("Accept error!\n");
-		close(sd);
-		exit(1);
-	}
-
 	while(1) {
-		if((size = read(sdc, buf, sizeof(buf))) == -1) {
-			printf("Read error!\n");
+		pid_t pid;
+
+		if((sdc = accept(sd, NULL, 0)) == -1) {
+			printf("Accept error!\n");
 			close(sd);
 			exit(1);
 		}
 
-		for(i = 0; i < size; i++)
-			printf("%c", buf[i]);
-		printf("\n");
+		pid = fork();
+
+		switch(pid) {
+		case -1 : printf("Fork error!\n");
+			  exit(1);
+		case 0 :  while(1) {
+				if((size = read(sdc, buf, sizeof(buf))) <= 0) {
+					printf("Read error!\n");
+					close(sd);
+					break;;
+				}
+
+			  for(i = 0; i < size; i++)
+				printf("%c", buf[i]);
+			  printf("\n");
+
+			 }
+		default: break;
+		}
 
 	}
-
+	
 	close(sd);
 	close(sdc);
 
