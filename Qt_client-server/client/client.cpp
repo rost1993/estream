@@ -365,12 +365,3 @@ void Client::slotCrypt()
     delete[] buf;
     delete[] out;
 }
-
-
-
-
-
-
-
-
-
