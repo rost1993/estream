@@ -3,6 +3,8 @@
 #include "server.h"
 #include "ui_server.h"
 
+int security;
+
 // Вектор инициализации
 uint8_t IV[16] = { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 };
 
@@ -134,11 +136,11 @@ void Server::slotReadClient()
             nextBlockSize = 0;
         }
 
+        security = index;
+
         // Получаем зашифрованное сообщение
-        if((index >= 0) && (index <= 6)) {
-            security = index;
+        if((security >= 0) && (security <= 6))
             slotCrypt();
-        }
 
         if(index != 7) {
             ui->textEdit->setTextColor(QColor("black"));
@@ -178,107 +180,49 @@ void Server::slotSendToClient()
     message.clear();
 }
 
+// Объединение всех типов структур для шифрования
+union context {
+    struct salsa_context salsa;
+    struct rabbit_context rabbit;
+    struct hc128_context hc128;
+    struct sosemanuk_context sosemanuk;
+    struct grain_context grain;
+    struct mickey_context mickey;
+    struct trivium_context trivium;
+};
+
+// Объявляем новые типы
+typedef int (*set_t)(void *ctx, uint8_t *key, int keylen, uint8_t *iv, int ivlen);
+typedef void (*crypt_t)(void *ctx, uint8_t *buf, uint32_t buflen, uint8_t *out);
+
+// Объявление массивов функций
+set_t set[] = { (set_t)salsa_set_key_and_iv,
+                (set_t)rabbit_set_key_and_iv,
+                (set_t)hc128_set_key_and_iv,
+                (set_t)sosemanuk_set_key_and_iv,
+                (set_t)grain_set_key_and_iv,
+                (set_t)mickey_set_key_and_iv,
+                (set_t)trivium_set_key_and_iv };
+
+crypt_t crypt[] = { (crypt_t)salsa_crypt,
+                    (crypt_t)rabbit_crypt,
+                    (crypt_t)hc128_crypt,
+                    (crypt_t)sosemanuk_crypt,
+                    (crypt_t)grain_crypt,
+                    (crypt_t)mickey_crypt,
+                    (crypt_t)trivium_crypt };
+
+// Задаем массив максимальных длин ключей для вектора инициализации
+const int ivlen[7] = { 8, 8, 16, 16, 12, 10, 10 };
+
+// Функция шифрования/расшифровывания
 int
-salsa(uint8_t *k, int keylen, uint8_t *buf, uint32_t buflen, uint8_t *out)
+crypt_func(void *ctx, uint8_t *k, int keylen, uint8_t *buf, uint32_t buflen, uint8_t *out)
 {
-    struct salsa_context ctx;
-
-    salsa_init(&ctx);
-
-    if(salsa_set_key_and_iv(&ctx, k, keylen, IV, 8))
+    if(set[security](ctx, k, keylen, IV, ivlen[security]))
         return -1;
 
-    salsa_encrypt(&ctx, buf, buflen, out);
-
-    return 0;
-}
-
-int
-rabbit(uint8_t *k, int keylen, uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-    struct rabbit_context ctx;
-
-    rabbit_init(&ctx);
-
-    if(rabbit_set_key_and_iv(&ctx, k, keylen, IV, 8))
-        return -1;
-
-    rabbit_encrypt(&ctx, buf, buflen, out);
-
-    return 0;
-}
-
-int
-hc128(uint8_t *k, int keylen, uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-    struct hc128_context ctx;
-
-    hc128_init(&ctx);
-
-    if(hc128_set_key_and_iv(&ctx, k, keylen, IV, 16))
-        return -1;
-
-    hc128_encrypt(&ctx, buf, buflen, out);
-
-    return 0;
-}
-
-int
-sosemanuk(uint8_t *k, int keylen, uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-    struct sosemanuk_context ctx;
-
-    sosemanuk_init(&ctx);
-
-    if(sosemanuk_set_key_and_iv(&ctx, k, keylen, IV, 16))
-        return -1;
-
-    sosemanuk_encrypt(&ctx, buf, buflen, out);
-
-    return 0;
-}
-
-int
-grain(uint8_t *k, int keylen, uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-    struct grain_context ctx;
-
-    grain_init(&ctx);
-
-    if(grain_set_key_and_iv(&ctx, k, keylen, IV, 12))
-        return -1;
-
-    grain_encrypt(&ctx, buf, buflen, out);
-
-    return 0;
-}
-
-int
-mickey(uint8_t *k, int keylen, uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-    struct mickey_context ctx;
-
-    mickey_init(&ctx);
-
-    if(mickey_set_key_and_iv(&ctx, k, keylen, IV, 10))
-        return -1;
-
-    mickey_encrypt(&ctx, buf, buflen, out);
-
-    return 0;
-}
-
-int
-trivium(uint8_t *k, int keylen, uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-    struct trivium_context ctx;
-
-    trivium_init(&ctx);
-
-    if(trivium_set_key_and_iv(&ctx, k, keylen, IV, 10))
-        return -1;
-
-    trivium_encrypt(&ctx, buf, buflen, out);
+    crypt[security](ctx, buf, buflen, out);
 
     return 0;
 }
@@ -291,6 +235,7 @@ void Server::slotCrypt()
     uint8_t *buf, *out, k[32];
     uint32_t buflen;
     int keylen;
+    union context context;
 
     buflen = message.length();
 
@@ -309,25 +254,25 @@ void Server::slotCrypt()
     memcpy(buf, temp, buflen);
 
     switch (security) {
-    case 0 : if(salsa(k, keylen, buf, buflen, out))
+    case 0 : if(crypt_func(&(context.salsa), k, keylen, buf, buflen, out))
                 QMessageBox::warning(this, "Error!", "Salsa algorithm error!");
              break;
-    case 1 : if(rabbit(k, keylen, buf, buflen, out))
+    case 1 : if(crypt_func(&(context.rabbit), k, keylen, buf, buflen, out))
                 QMessageBox::warning(this, "Error!", "Rabbit algorithm error!");
              break;
-    case 2 : if(hc128(k, keylen, buf, buflen, out))
+    case 2 : if(crypt_func(&(context.hc128), k, keylen, buf, buflen, out))
                 QMessageBox::warning(this, "Error!", "HC128 algorithm error!");
              break;
-    case 3 : if(sosemanuk(k, keylen, buf, buflen, out))
+    case 3 : if(crypt_func(&(context.sosemanuk), k, keylen, buf, buflen, out))
                 QMessageBox::warning(this, "Error!", "Sosemanuk algorithm error!");
              break;
-    case 4 : if(grain(k, keylen, buf, buflen, out))
+    case 4 : if(crypt_func(&(context.grain), k, keylen, buf, buflen, out))
                 QMessageBox::warning(this, "Error!", "Grain algorithm error!");
              break;
-    case 5 : if(mickey(k, keylen, buf, buflen, out))
+    case 5 : if(crypt_func(&(context.mickey), k, keylen, buf, buflen, out))
                 QMessageBox::warning(this, "Error!", "Mickey algorithm error!");
              break;
-    case 6 : if(trivium(k, keylen, buf, buflen, out))
+    case 6 : if(crypt_func(&(context.trivium), k, keylen, buf, buflen, out))
                 QMessageBox::warning(this, "Error!", "Trivium algorithm error!");
              break;
     }

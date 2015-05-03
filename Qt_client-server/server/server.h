@@ -33,7 +33,6 @@ private:
     QTcpSocket *client;
     QString key;
     quint16 nextBlockSize;
-    int security;
 
 private slots:
     void slotStartStopServer();

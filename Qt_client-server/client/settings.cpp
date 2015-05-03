@@ -102,7 +102,7 @@ void Settings::slotMode()
         ui->lineEdit->setEnabled(true);
     }
     else {
-        ui->comboBox_2->setEditable(false);
+        ui->comboBox_2->setEnabled(false);
         ui->lineEdit->setEnabled(false);
     }
 }

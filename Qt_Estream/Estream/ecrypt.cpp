@@ -1,22 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-
-#include <QString>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QFile>
-
 #include "ecrypt.h"
 #include "ui_ecrypt.h"
-#include "estream.h"
+
+#define BLOCK   1000000
 
 // Глобальные переменные
 uint8_t key[32], iv[16];
 int alg = 0;
 int keylen, ivlen;
-int block = 1000000;
 
 ecrypt::ecrypt(QWidget *parent) :
     QMainWindow(parent),
@@ -178,147 +168,49 @@ void ecrypt::export_ket_and_iv()
     QMessageBox::information(this, "Information!", "The secret key and vector initialization stored in the current directory in the file - key.txt");
 }
 
-// Интерфейс взаимодействия с библиотекой salsa.h
+// Объединям все структуры проекта eSTREAM в context
+union context {
+    struct salsa_context salsa;
+    struct rabbit_context rabbit;
+    struct hc128_context hc128;
+    struct sosemanuk_context sosemanuk;
+    struct grain_context grain;
+    struct mickey_context mickey;
+    struct trivium_context trivium;
+};
+
+typedef int (*set_t)(void *ctx, uint8_t *key, int keylen, uint8_t *iv, int ivlen);
+typedef void (*crypt_t)(void *ctx, uint8_t *buf, uint32_t buflen, uint8_t *out);
+
+// Указатели на функции проекта eSTREAM
+set_t set[] = { (set_t)salsa_set_key_and_iv,
+                (set_t)rabbit_set_key_and_iv,
+                (set_t)hc128_set_key_and_iv,
+                (set_t)sosemanuk_set_key_and_iv,
+                (set_t)grain_set_key_and_iv,
+                (set_t)mickey_set_key_and_iv,
+                (set_t)trivium_set_key_and_iv };
+
+crypt_t crypt[] = { (crypt_t)salsa_crypt,
+                    (crypt_t)rabbit_crypt,
+                    (crypt_t)hc128_crypt,
+                    (crypt_t)sosemanuk_crypt,
+                    (crypt_t)grain_crypt,
+                    (crypt_t)mickey_crypt,
+                    (crypt_t)trivium_crypt };
+
+// Функция шифрования/расшифровывания
 int
-salsa(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
+crypt_func(FILE *fp, FILE *fd, void *ctx, int alg)
 {
-    struct salsa_context ctx;
+    uint8_t buf[BLOCK], out[BLOCK];
     uint32_t byte;
 
-    salsa_init(&ctx);
-
-    if(salsa_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
+    if(set[alg](ctx, key, keylen, iv, ivlen))
         return -1;
 
-    while((byte = fread(buf, 1, block, fp)) > 0) {
-        salsa_encrypt(&ctx, buf, byte, out);
-
-        fwrite(out, 1, byte, fd);
-    }
-
-    return 0;
-}
-
-// Интерфейс взаимодействия с библиотекой rabbit.h
-int
-rabbit(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-    struct rabbit_context ctx;
-    uint32_t byte;
-
-    rabbit_init(&ctx);
-
-    if(rabbit_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-        return -1;
-
-    while((byte = fread(buf, 1, block, fp)) > 0) {
-        rabbit_encrypt(&ctx, buf, byte, out);
-
-        fwrite(out, 1, byte, fd);
-    }
-
-    return 0;
-}
-
-// Интерфейс взаимодействия с библиотекой hc128.h
-int
-hc128(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-    struct hc128_context ctx;
-    uint32_t byte;
-
-    hc128_init(&ctx);
-
-    if(hc128_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-        return -1;
-
-    while((byte = fread(buf, 1, block, fp)) > 0) {
-        hc128_encrypt(&ctx, buf, byte, out);
-
-        fwrite(out, 1, byte, fd);
-    }
-
-    return 0;
-}
-
-// Интерфейс взаимодействия с библиотекой sosemanuk.h
-int
-sosemanuk(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-    struct sosemanuk_context ctx;
-    uint32_t byte;
-
-    sosemanuk_init(&ctx);
-
-    if(sosemanuk_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-        return -1;
-
-    while((byte = fread(buf, 1, block, fp)) > 0) {
-        sosemanuk_encrypt(&ctx, buf, byte, out);
-
-        fwrite(out, 1, byte, fd);
-    }
-
-    return 0;
-}
-
-// Интерфейс взаимодействия с библиотекой grain.h
-int
-grain(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-    struct grain_context ctx;
-    uint32_t byte;
-
-    grain_init(&ctx);
-
-    if(grain_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-        return -1;
-
-    while((byte = fread(buf, 1, block, fp)) > 0) {
-        grain_encrypt(&ctx, buf, byte, out);
-
-        fwrite(out, 1, byte, fd);
-    }
-
-    return 0;
-}
-
-// Интерфейс взаимодействия с библиотекой mickey.h
-int
-mickey(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-    struct mickey_context ctx;
-    uint32_t byte;
-
-    mickey_init(&ctx);
-
-    if(mickey_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-        return -1;
-
-    while((byte = fread(buf, 1, block, fp)) > 0) {
-        mickey_encrypt(&ctx, buf, byte, out);
-
-        fwrite(out, 1, byte, fd);
-    }
-
-    return 0;
-}
-
-// Интерфейс взаимодействия с библиотекой trivium.h
-int
-trivium(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-    struct trivium_context ctx;
-    uint32_t byte;
-
-    trivium_init(&ctx);
-
-    if(trivium_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-        return -1;
-
-    while((byte = fread(buf, 1, block, fp)) > 0) {
-        trivium_encrypt(&ctx, buf, byte, out);
-
+    while((byte = fread(buf, 1, BLOCK, fp)) > 0) {
+        crypt[alg](ctx, buf, byte, out);
         fwrite(out, 1, byte, fd);
     }
 
@@ -331,21 +223,12 @@ void ecrypt::base_func()
     FILE *fp, *fd;
     QString k, v, in_file, out_file;
     QByteArray ba;
-    uint8_t *buf, *out;
+    union context context;
     char *temp;
+    int res;
 
     if((ui->lineEdit_1->text() == "" || (ui->lineEdit_2->text() == "") || (ui->lineEdit_3->text() == "") || (ui->lineEdit_4->text() == ""))) {
         QMessageBox::information(this, "Error!", "Not all fields are filled!");
-        return;
-    }
-
-    if((buf = (uint8_t *)malloc(sizeof(uint8_t) * block)) == NULL) {
-        QMessageBox::warning(this, "Error!", "Error allocates memory for the buffer data");
-        return;
-    }
-
-    if((out = (uint8_t *)malloc(sizeof(uint8_t) * block)) == NULL) {
-        QMessageBox::warning(this, "Error!", "Error allocates memory for the output buffer data");
         return;
     }
 
@@ -385,34 +268,29 @@ void ecrypt::base_func()
 
     // Выбор алгоритма
     switch(alg) {
-    case 0 : if(salsa(fp, fd, buf, out))
-                QMessageBox::warning(this, "Error!", "Salsa function error!");
+    case 0 : res = crypt_func(fp, fd, &(context.salsa), alg);
              break;
-    case 1 : if(rabbit(fp, fd, buf, out))
-                QMessageBox::warning(this, "Error!", "Rabbit function error!");
+    case 1 : res = crypt_func(fp, fd, &(context.rabbit), alg);
              break;
-    case 2 : if(hc128(fp, fd, buf, out))
-                QMessageBox::warning(this, "Error!", "HC128 function error!");
+    case 2 : res = crypt_func(fp, fd, &(context.hc128), alg);
              break;
-    case 3 : if(sosemanuk(fp, fd, buf, out))
-                QMessageBox::warning(this, "Error!", "Sosemanuk function error!");
+    case 3 : res = crypt_func(fp, fd, &(context.sosemanuk), alg);
              break;
-    case 4 : if(grain(fp, fd, buf, out))
-                QMessageBox::warning(this, "Error!", "Grain function error!");
+    case 4 : res = crypt_func(fp, fd, &(context.grain), alg);
              break;
-    case 5 : if(mickey(fp, fd, buf, out))
-                QMessageBox::warning(this, "Error!", "Mickey function error!");
+    case 5 : res = crypt_func(fp, fd, &(context.mickey), alg);
              break;
-    case 6 : if(trivium(fp, fd, buf, out))
-                QMessageBox::warning(this, "Error!", "Trivium function error!");
+    case 6 : res = crypt_func(fp, fd, &(context.trivium), alg);
              break;
+    default: QMessageBox::warning(this, "Error!", "No such algorithm!");
+             return;
     }
 
     fclose(fp);
     fclose(fd);
 
-    free(buf);
-    free(out);
+    if(res == -1)
+        QMessageBox::warning(this, "Error!", "Error in crypting!");
 
     // Завершающая стадия. Вызов кнопки "Начать снова" и "Экспорт ключа и вектора"
     ui->pushButton_5->setVisible(false);

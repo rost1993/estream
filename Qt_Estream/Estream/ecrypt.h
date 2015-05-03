@@ -1,7 +1,15 @@
 #ifndef ECRYPT_H
 #define ECRYPT_H
 
+#include <QFile>
+#include <QString>
+#include <QFileDialog>
+#include <QMessageBox>
 #include <QMainWindow>
+
+#include <stdlib.h>
+#include <stdint.h>
+#include "../lib/estream.h"
 
 namespace Ui {
 class ecrypt;
