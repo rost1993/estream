@@ -25,12 +25,9 @@ struct grain_context {
 	uint8_t s[128];
 };
 
-void grain_init(struct grain_context *ctx);
-
 int grain_set_key_and_iv(struct grain_context *ctx, const uint8_t *key, const int keylen, const uint8_t iv[12], const int ivlen);
 
-void grain_encrypt(struct grain_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out);
-void grain_decrypt(struct grain_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out);
+void grain_crypt(struct grain_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out);
 
 void grain_test_vectors(struct grain_context *ctx);
 

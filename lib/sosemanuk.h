@@ -30,12 +30,9 @@ struct sosemanuk_context {
 	uint32_t r2;
 };
 
-void sosemanuk_init(struct sosemanuk_context *ctx);
-
 int sosemanuk_set_key_and_iv(struct sosemanuk_context *ctx, const uint8_t *key, const int keylen, const uint8_t iv[16], const int ivlen);
 
-void sosemanuk_encrypt(struct sosemanuk_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out);
-void sosemanuk_decrypt(struct sosemanuk_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out);
+void sosemanuk_crypt(struct sosemanuk_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out);
 
 void sosemanuk_test_vectors(struct sosemanuk_context *ctx);
 

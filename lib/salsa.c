@@ -19,14 +19,30 @@
 #include <stdint.h>
 
 #include "salsa.h"
-#include "macro.h"
 
 #define SALSA16		16
 #define	SALSA32		32
 
+#define	ROTL32(v, n)	((v << n) | (v >> (32 - n)))
+
+// Selecting the byte order
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define U32TO32(x)								\
+	((x << 24) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | (x >> 24))
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define U32TO32(x)	(x)
+#else
+#error unsupported byte order
+#endif
+
+// Little-endian 4 uint8_t in the uint32_t
+#define U8TO32_LITTLE(p)						\
+	(((uint32_t)((p)[0])      ) | ((uint32_t)((p)[1]) << 8) | 	\
+	 ((uint32_t)((p)[2]) << 16) | ((uint32_t)((p)[3]) << 24))
+
 
 // Initialization function
-void
+static void
 salsa_init(struct salsa_context *ctx)
 {
 	memset(ctx, 0, sizeof(*ctx));
@@ -53,6 +69,8 @@ salsa_set_key_and_iv(struct salsa_context *ctx, const uint8_t *key, const int ke
 		'2', '-', 'b', 'y',
 		't', 'e', ' ', 'k'
 	};
+
+	salsa_init(ctx);
 
 	if(keylen == SALSA32) {
 		ctx->keylen = SALSA32;
@@ -154,7 +172,7 @@ salsa20(struct salsa_context *ctx, uint32_t *keystream)
  * buflen - length the data buffer
 */
 void
-salsa_encrypt(struct salsa_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
+salsa_crypt(struct salsa_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
 {
 	uint32_t keystream[16];
 	uint32_t i;
@@ -199,14 +217,14 @@ salsa_encrypt(struct salsa_context *ctx, const uint8_t *buf, uint32_t buflen, ui
 
 }
 
-// Salsa decrypt function. See salsa_encrypt
-void
-salsa_decrypt(struct salsa_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-	salsa_encrypt(ctx, buf, buflen, out);
-}
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define PRINT_U32TO32(x) \
+	(printf("%02x %02x %02x %02x ", (x >> 24), ((x >> 16) & 0xFF), ((x >> 8) & 0xFF), (x & 0xFF)))
+#else
+#define PRINT_U32TO32(x) \
+	(printf("%02x %02x %02x %02x ", (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), (x >> 24)))
+#endif
 
-// Test vectors print function
 void
 salsa_test_vectors(struct salsa_context *ctx)
 {

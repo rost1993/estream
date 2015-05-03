@@ -62,209 +62,6 @@ time_stop(void)
 	return (t2.tv_sec * 1000 + t2.tv_usec/1000);
 }
 
-// Interface to the library salsa.h
-static void
-salsa(void)
-{
-	struct salsa_context ctx;
-	
-	time_start();
-
-	salsa_init(&ctx);
-
-	if(salsa_set_key_and_iv(&ctx, key, 32, iv, 8)) {
-		printf("Salsa context filling error!\n");
-		exit(1);
-	}
-	
-	salsa_encrypt(&ctx, buf, BUFLEN, out1);
-
-	salsa_init(&ctx);
-
-	if(salsa_set_key_and_iv(&ctx, key, 32, iv, 8)) {
-		printf("Salsa context filling error!\n");
-		exit(1);
-	}
-	
-	salsa_decrypt(&ctx, out1, BUFLEN, out2);
-
-	printf("\nRun time Salsa of the %d bytes - %d\n\n", BUFLEN, time_stop());
-}
-
-// Interface to the library rabbit.h
-static void
-rabbit(void)
-{
-	struct rabbit_context ctx;
-
-	time_start();
-
-	rabbit_init(&ctx);
-
-	if(rabbit_set_key_and_iv(&ctx, key, 16, iv, 8)) {
-		printf("Rabbit context filling error!\n");
-		exit(1);
-	}
-	
-	rabbit_encrypt(&ctx, buf, BUFLEN, out1);
-
-	rabbit_init(&ctx);
-
-	if(rabbit_set_key_and_iv(&ctx, key, 16, iv, 8)) {
-		printf("Rabbit context filling error!\n");
-		exit(1);
-	}
-
-	rabbit_decrypt(&ctx, out1, BUFLEN, out2);
-
-	printf("\nRun time Rabbit of the %d bytes - %d\n\n", BUFLEN, time_stop());
-}
-
-// Interface to the library hc128.h
-static void
-hc128(void)
-{
-	struct hc128_context ctx;
-         
-	time_start();
-
-	hc128_init(&ctx);
-	
-	if(hc128_set_key_and_iv(&ctx, key, 16, iv, 16)) {
-		printf("HC128 context filling error!\n");
-		exit(1);
-	}
-
-	hc128_encrypt(&ctx, buf, BUFLEN, out1);
-        
-	hc128_init(&ctx);
-
-	if(hc128_set_key_and_iv(&ctx, key, 16, iv, 16)) {
-		printf("HC128 context filling error!\n");
-		exit(1);
-	}
-         
-	hc128_decrypt(&ctx, out1, BUFLEN, out2);
-       
-	printf("\nRun time HC128 of the %d bytes - %d\n\n", BUFLEN, time_stop());
-}
-
-// Interface to the library sosemanuk.h
-static void
-sosemanuk(void)
-{
-	struct sosemanuk_context ctx;
-	
-	time_start();
-
-	sosemanuk_init(&ctx);
-
-	if(sosemanuk_set_key_and_iv(&ctx, key, 32, iv, 16)) {
-		printf("Sosemanuk context filling error!\n");
-		exit(1);
-	}
-
-	sosemanuk_encrypt(&ctx, buf, BUFLEN, out1);
-         
-	sosemanuk_init(&ctx);
-
-	if(sosemanuk_set_key_and_iv(&ctx, key, 32, iv, 16)) {
-		printf("Sosemanuk context filling error!\n");
-		exit(1);
-	}
-         
-	sosemanuk_decrypt(&ctx, out1, BUFLEN, out2);
-        
-	printf("\nRun time Sosemanuk of the %d bytes - %d\n\n", BUFLEN, time_stop());
-}
-
-// Interface to the library grain.h
-static void
-grain(void)
-{
-	struct grain_context ctx;
-
-	time_start();
-
-	grain_init(&ctx);
-
-	if(grain_set_key_and_iv(&ctx, key, 16, iv, 12)) {
-		printf("Grain context filling error!\n");
-		exit(1);
-	}
-
-	grain_encrypt(&ctx, buf, BUFLEN, out1);
-
-	grain_init(&ctx);
-        
-	if(grain_set_key_and_iv(&ctx, key, 16, iv, 12)) {
-		printf("Grain context filling error!\n");
-		exit(1);
-	}
-        
-	grain_decrypt(&ctx, out1, BUFLEN, out2);
-        
-	printf("\nRun time Grain of the %d bytes - %d\n\n", BUFLEN, time_stop());
-}
-
-// Interface to the mickey.h
-static void
-mickey(void)
-{
-	struct mickey_context ctx;
-       
-	time_start();
-
-	mickey_init(&ctx);
-
-	if(mickey_set_key_and_iv(&ctx, key, 10, iv, 10)) {
-		printf("Mickey context filling error!\n");
-		exit(1);
-	}
- 
-	mickey_encrypt(&ctx, buf, BUFLEN, out1);
-
-	mickey_init(&ctx);
-	
-	if(mickey_set_key_and_iv(&ctx, key, 10, iv, 10)) {
-		printf("Mickey context filling error!\n");
-		exit(1);
-	}
-	        
-	mickey_decrypt(&ctx, out1, BUFLEN, out2);
-        
-	printf("\nRun time Mickey of the %d bytes - %d\n\n", BUFLEN, time_stop());
-}
-
-// Interface to the trivium.h
-static void
-trivium(void)
-{
-	struct trivium_context ctx;
-    
-	time_start();
-
-	trivium_init(&ctx);
-
-	if(trivium_set_key_and_iv(&ctx, key, 10, iv, 10)) {
-		printf("Trivium context filling error!\n");
-		exit(1);
-	}
-	
-	trivium_encrypt(&ctx, buf, BUFLEN, out1);
-	
-	trivium_init(&ctx);
-
-	if(trivium_set_key_and_iv(&ctx, key, 10, iv, 10)) {
-		printf("Trivium context filling error!\n");
-		exit(1);
-	}
-	        
-	trivium_decrypt(&ctx, out1, BUFLEN, out2);
-	       
-	printf("\nRun time Trivium of the %d bytes - %d\n\n", BUFLEN, time_stop());
-}
-
 // Manual
 static void
 help(void)
@@ -273,18 +70,74 @@ help(void)
 	printf("\nOptions:\n");
 	printf("\t--help(-h) - reference manual\n");
 	printf("\t--algorithm(-a) - selection algorithm:\n");
-	printf("\t\t1 - Salsa\n\t\t2 - Rabbit\n\t\t3 - HC128\n\t\t4 - Sosemanuk\n");
-	printf("\t\t5 - Grain\n\t\t6 - Mickey\n\t\t7 - Trivium\n");
+	printf("\t\t0 - Salsa\n\t\t1 - Rabbit\n\t\t2 - HC128\n\t\t3 - Sosemanuk\n");
+	printf("\t\t4 - Grain\n\t\t5 - Mickey\n\t\t6 - Trivium\n");
 	printf("\nExample: ./estream_testvectors -h or ./estream_testvectors -a 1\n\n");
+}
+
+// Union all structures eSTREAM project
+union context {
+	struct salsa_context salsa;
+	struct rabbit_context rabbit;
+	struct hc128_context hc128;
+	struct sosemanuk_context sosemanuk;
+	struct grain_context grain;
+	struct mickey_context mickey;
+	struct trivium_context trivium;
+};
+
+typedef int (*set_t)(void *ctx, uint8_t *key, int keylen, uint8_t *iv, int ivlen);
+typedef void (*crypt_t)(void *ctx, uint8_t *buf, uint32_t buflen, uint8_t *out);
+
+// Pointer of the function eSTREAM project
+set_t set[] = { (set_t)salsa_set_key_and_iv,
+		(set_t)rabbit_set_key_and_iv,
+		(set_t)hc128_set_key_and_iv,
+		(set_t)sosemanuk_set_key_and_iv,
+		(set_t)grain_set_key_and_iv,
+		(set_t)mickey_set_key_and_iv,
+		(set_t)trivium_set_key_and_iv };
+
+crypt_t crypt[] = { (crypt_t)salsa_crypt,
+		    (crypt_t)rabbit_crypt,
+		    (crypt_t)hc128_crypt,
+		    (crypt_t)sosemanuk_crypt,
+		    (crypt_t)grain_crypt,
+		    (crypt_t)mickey_crypt,
+		    (crypt_t)trivium_crypt };
+
+// Maximum length secret key and IV
+const int keylen[7] = { 32, 16, 16, 32, 16, 10, 10 };
+const int ivlen[7] =  {  8,  8, 16, 16, 12, 10, 10 };
+
+// Speed test
+static void
+speed_test(void *ctx, int alg)
+{
+	time_start();
+
+	if(set[alg](ctx, key, keylen[alg], iv, ivlen[alg])) {
+		printf("Context filling error!\n");
+		exit(1);
+	}
+
+	crypt[alg](ctx, buf, BUFLEN, out1);
+
+	if(set[alg](ctx, key, keylen[alg], iv, ivlen[alg])) {
+		printf("Context filling error!\n");
+		exit(1);
+	}
+
+	crypt[alg](ctx, out1, BUFLEN, out2);
+
+	printf("\nRun time of the %d bytes - %d\n\n", BUFLEN, time_stop());
 }
 
 int
 main(int argc, char *argv[])
 {
+	union context context;
 	int res, alg = 0;
-
-	// Array pointer to the function encrypt/decrypt
-	void (*p[7])(void) = { salsa, rabbit, hc128, sosemanuk, grain, mickey, trivium };
 
 	const struct option long_option [] = {
 		{"algorithm", 1, NULL, 'a'},
@@ -307,21 +160,28 @@ main(int argc, char *argv[])
 		}
 	}
 
-	// Select argument
+	// Select algorithm
 	switch(alg) {
-	case 1 : (*p[0])();
+	case 0 : printf("\nSalsa speed test!\n");
+		 speed_test(&(context.salsa), alg);
 		 break;
-	case 2 : (*p[1])();
+	case 1 : printf("\nRabbit speed test!\n");
+		 speed_test(&(context.rabbit), alg);
 		 break;
-	case 3 : (*p[2])();
+	case 2 : printf("\nHC128 speed test!\n");
+		 speed_test(&(context.hc128), alg);
 		 break;
-	case 4 : (*p[3])();
+	case 3 : printf("\nSosemanuk speed test!\n");
+		 speed_test(&(context.sosemanuk), alg);
 		 break;
-	case 5 : (*p[4])();
+	case 4 : printf("\nGrain speed test!\n");
+		 speed_test(&(context.grain), alg);
 		 break;
-	case 6 : (*p[5])();
+	case 5 : printf("\nMickey speed test!\n");
+		 speed_test(&(context.mickey), alg);
 		 break;
-	case 7 : (*p[6])();
+	case 6 : printf("\nTrivium speed test!\n");
+		 speed_test(&(context.trivium), alg);
 		 break;
 	default: printf("\nNo such algorithm!\n");
 		 break;

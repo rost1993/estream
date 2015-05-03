@@ -16,9 +16,25 @@
 #include <string.h>
 
 #include "hc128.h"
-#include "macro.h"
 
 #define HC128		16
+
+#define ROTL32(v, n)	((v << n) | (v >> (32 - n)))
+#define ROTR32(v, n)	((v >> n) | (v << (32 - n)))
+
+// Selecting the byte order
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define U32TO32(x)								\
+	((x << 24) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | (x >> 24))
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define U32TO32(x)	(x)
+#else
+#error unsupported byte order
+#endif
+
+#define U8TO32_LITTLE(p)						\
+	(((uint32_t)((p)[0])	  ) | ((uint32_t)((p)[1]) << 8) |	\
+	 ((uint32_t)((p)[2]) << 16) | ((uint32_t)((p)[3]) << 24))
 
 // f1 and f2 function
 #define F1(x)		(ROTR32(x,  7) ^ ROTR32(x, 18) ^ (x >>  3))
@@ -85,7 +101,7 @@
 }
 
 // HC128 initialization function
-void
+static void
 hc128_init(struct hc128_context *ctx)
 {
 	memset(ctx, 0, sizeof(*ctx));
@@ -179,6 +195,8 @@ hc128_initialization_process(struct hc128_context *ctx)
 int
 hc128_set_key_and_iv(struct hc128_context *ctx, const uint8_t *key, const int keylen, const uint8_t iv[16], const int ivlen)
 {
+	hc128_init(ctx);
+
 	if(keylen <= HC128)
 		ctx->keylen = keylen;
 	else
@@ -246,14 +264,14 @@ hc128_generate_keystream(struct hc128_context *ctx, uint32_t *keystream)
 }
 
 /*
- * HC128 encrypt algorithm.
+ * HC128 crypt algorithm.
  * ctx - pointer on HC128 context
  * buf - pointer on buffer data
  * buflen - length the data buffer
  * out - pointer on output array
 */
 void
-hc128_encrypt(struct hc128_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
+hc128_crypt(struct hc128_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
 {
 	uint32_t keystream[16];
 	uint32_t i;
@@ -287,12 +305,13 @@ hc128_encrypt(struct hc128_context *ctx, const uint8_t *buf, uint32_t buflen, ui
 	}
 }
 
-// HC128 decrypt function. See hc128_encrypt
-void
-hc128_decrypt(struct hc128_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-	hc128_encrypt(ctx, buf, buflen, out);
-}
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define PRINT_U32TO32(x) \
+	(printf("%02x %02x %02x %02x ", (x >> 24), ((x >> 16) & 0xFF), ((x >> 8) & 0xFF), (x & 0xFF)))
+#else
+#define PRINT_U32TO32(x) \
+	(printf("%02x %02x %02x %02x ", (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), (x >> 24)))
+#endif
 
 // Test vectors print
 void

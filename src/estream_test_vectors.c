@@ -29,118 +29,6 @@ uint8_t iv[16] = { 0x01, 0x23, 0x45, 0x67,
 		   0x01, 0x23, 0x45, 0x67,
 		   0x89, 0xAB, 0xCD, 0xEF };
 
-// Interface to the library salsa.h
-static void
-salsa(void)
-{
-	struct salsa_context ctx;
-
-	salsa_init(&ctx);
-
-	if(salsa_set_key_and_iv(&ctx, key, 32, iv, 8)) {
-		printf("Salsa context filling error!\n");
-		exit(1);
-	}
-
-	salsa_test_vectors(&ctx);
-}
-
-// Interface to the library rabbit.h
-static void
-rabbit(void)
-{
-	struct rabbit_context ctx;
-	
-	rabbit_init(&ctx);
-
-	if(rabbit_set_key_and_iv(&ctx, key, 16, iv, 8)) {
-		printf("Rabbit context filling error!\n");
-		exit(1);
-	}
-
-	rabbit_test_vectors(&ctx);
-}
-
-// Interface to the hc128.h
-static void
-hc128(void)
-{
-	struct hc128_context ctx;
-
-	hc128_init(&ctx);
-
-	if(hc128_set_key_and_iv(&ctx, key, 16, iv, 16)) {
-		printf("HC128 context filling error!\n");
-		exit(1);
-	}
-
-	hc128_test_vectors(&ctx);
-}
-
-// Interface to the library sosemanuk.h
-static void
-sosemanuk(void)
-{
-	struct sosemanuk_context ctx;
-
-	sosemanuk_init(&ctx);
-
-	if(sosemanuk_set_key_and_iv(&ctx, key, 32, iv, 16)) {
-		printf("Sosemanuk context filling error!\n");
-		exit(1);
-	}
-
-	sosemanuk_test_vectors(&ctx);
-}
-
-// Interface to the library grain.h
-static void
-grain(void)
-{
-	struct grain_context ctx;
-
-	grain_init(&ctx);
-
-	if(grain_set_key_and_iv(&ctx, key, 16, iv, 12)) {
-		printf("Grain context filling error!\n");
-		exit(1);
-	}
-
-	grain_test_vectors(&ctx);
-}
-
-// Interface to the library mickey.h
-static void
-mickey(void)
-{
-	struct mickey_context ctx;
-
-	mickey_init(&ctx);
-
-	if(mickey_set_key_and_iv(&ctx, key, 10, iv, 10)) {
-		printf("Mickey context filling error!\n");
-		exit(1);
-	}
-	
-	mickey_test_vectors(&ctx);
-}
-
-// Interface to the library trivium.h
-static void
-trivium(void)
-{
-	struct trivium_context ctx;
-
-	trivium_init(&ctx);
-
-	if(trivium_set_key_and_iv(&ctx, key, 10, iv, 10)) {
-		printf("Trivium context filling error!\n");
-		exit(1);
-	}
-
-	trivium_test_vectors(&ctx);
-}
-
 // Manual
 static void
 help(void)
@@ -149,19 +37,61 @@ help(void)
 	printf("\nOptions:\n");
 	printf("\t--help(-h) - reference manual\n");
 	printf("\t--algorithm(-a) - selection algorithm:\n");
-	printf("\t\t1 - Salsa\n\t\t2 - Rabbit\n\t\t3 - HC128\n\t\t4 - Sosemanuk\n");
-	printf("\t\t5 - Grain\n\t\t6 - Mickey\n\t\t7 - Trivium\n");
+	printf("\t\t0 - Salsa\n\t\t1 - Rabbit\n\t\t2 - HC128\n\t\t3 - Sosemanuk\n");
+	printf("\t\t4 - Grain\n\t\t5 - Mickey\n\t\t6 - Trivium\n");
 	printf("\nExample: ./estream_testvectors -h or ./estream_testvectors -a 1\n\n");
+}
+
+// Union all structures eSTREAM project
+union context {
+	struct salsa_context salsa;
+	struct rabbit_context rabbit;
+	struct hc128_context hc128;
+	struct sosemanuk_context sosemanuk;
+	struct grain_context grain;
+	struct mickey_context mickey;
+	struct trivium_context trivium;
+};
+
+typedef int (*set_t)(void *ctx, uint8_t *key, int keylen, uint8_t *iv, int ivlen);
+typedef void (*test_t)(void *ctx);
+
+// Pointer of the function eSTREAM project
+set_t set[] = { (set_t)salsa_set_key_and_iv,
+		(set_t)rabbit_set_key_and_iv,
+		(set_t)hc128_set_key_and_iv,
+		(set_t)sosemanuk_set_key_and_iv,
+		(set_t)grain_set_key_and_iv,
+		(set_t)mickey_set_key_and_iv,
+		(set_t)trivium_set_key_and_iv };
+
+test_t test[] = { (test_t)salsa_test_vectors,
+		  (test_t)rabbit_test_vectors,
+		  (test_t)hc128_test_vectors,
+		  (test_t)sosemanuk_test_vectors,
+		  (test_t)grain_test_vectors,
+		  (test_t)mickey_test_vectors,
+		  (test_t)trivium_test_vectors };
+
+// Maximum length secret key and IV
+const int keylen[7] = { 32, 16, 16, 32, 16, 10, 10 };
+const int ivlen[7] =  {  8,  8, 16, 16, 12, 10, 10 };
+
+// Test vectors
+static void
+test_vectors(void *ctx, int alg)
+{
+	set[alg](ctx, key, keylen[alg], iv, ivlen[alg]);
+
+	test[alg](ctx);
 }
 
 int
 main(int argc, char *argv[])
 {
+	union context context;
 	int res, alg = 0;
 	
-	// Array pointer to the function encrypt/decrypt
-	void (*p[7])(void) = { salsa, rabbit, hc128, sosemanuk, grain, mickey, trivium };
-
 	const struct option long_option [] = {
 		{"algorithm", 1, NULL, 'a'},
 		{"help",      0, NULL, 'h'},
@@ -184,21 +114,21 @@ main(int argc, char *argv[])
 	}
 	
 	switch(alg) {
-	case 1 : (*p[0])();
+	case 0 : test_vectors(&(context.salsa), alg);
 		 break;
-	case 2 : (*p[1])();
+	case 1 : test_vectors(&(context.rabbit), alg);
 		 break;
-	case 3 : (*p[2])();
+	case 2 : test_vectors(&(context.hc128), alg);
 		 break;
-	case 4 : (*p[3])();
+	case 3 : test_vectors(&(context.sosemanuk), alg);
 		 break;
-	case 5 : (*p[4])();
+	case 4 : test_vectors(&(context.grain), alg);
 		 break;
-	case 6 : (*p[5])();
+	case 5 : test_vectors(&(context.mickey), alg);
 		 break;
-	case 7 : (*p[6])();
+	case 6 : test_vectors(&(context.trivium), alg);
 		 break;
-	default: printf("\nNo such algorithm!\n");
+	default: printf("\nNo such algorithm!\n\n");
 		 break;
 	}
 

@@ -15,160 +15,44 @@
 #include "estream.h"
 
 #define MAX_FILE 	4096
+#define BLOCK		1000000
 
 // Global variable
-uint32_t block = 1000000;
 uint8_t key[32];
 uint8_t iv[16];
 int keylen;
 int ivlen;
 
-// Interface to the library salsa.h
-static int
-salsa(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-	struct salsa_context ctx;
-	uint32_t byte;
+// Union all structures eSTREAM project
+union context {
+	struct salsa_context salsa;
+	struct rabbit_context rabbit;
+	struct hc128_context hc128;
+	struct sosemanuk_context sosemanuk;
+	struct grain_context grain;
+	struct mickey_context mickey;
+	struct trivium_context trivium;
+};
 
-	salsa_init(&ctx);
+typedef int (*set_t)(void *ctx, uint8_t *key, int keylen, uint8_t *iv, int ivlen);
+typedef void (*crypt_t)(void *ctx, uint8_t *buf, uint32_t buflen, uint8_t *out);
 
-	if(salsa_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-		return -1;
+// Pointer of the function eSTREAM project
+set_t set[] = { (set_t)salsa_set_key_and_iv,
+		(set_t)rabbit_set_key_and_iv,
+		(set_t)hc128_set_key_and_iv,
+		(set_t)sosemanuk_set_key_and_iv,
+		(set_t)grain_set_key_and_iv,
+		(set_t)mickey_set_key_and_iv,
+		(set_t)trivium_set_key_and_iv };
 
-	while((byte = fread(buf, 1, block, fp)) > 0) {
-		salsa_encrypt(&ctx, buf, byte, out);
-			
-		fwrite(out, 1, byte, fd);
-	}
-
-	return 0;
-}
-
-// Interface to the library rabbit.h
-static int
-rabbit(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-	struct rabbit_context ctx;
-	uint32_t byte;
- 
-	rabbit_init(&ctx);
-
-	if(rabbit_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-		return -1;
-  
-	while((byte = fread(buf, 1, block, fp)) > 0) {
-		rabbit_encrypt(&ctx, buf, byte, out);
-		
-		fwrite(out, 1, byte, fd);
-	}
-         
-	return 0;
-}
-
-// Interface to the library sosemanuk.h
-static int
-sosemanuk(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-	struct sosemanuk_context ctx;
-	uint32_t byte;
-
-	sosemanuk_init(&ctx);
-
-	if(sosemanuk_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-		return -1;
-	
-	while((byte = fread(buf, 1, block, fp)) > 0) {
-		sosemanuk_encrypt(&ctx, buf, byte, out);
-
-		fwrite(out, 1, byte, fd);
-	}
-
-	return 0;
-}
-
-// Interface to the library hc128.h
-static int
-hc128(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-	struct hc128_context ctx;
-	uint32_t byte;
-
-	hc128_init(&ctx);
- 
-	if(hc128_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-		return -1;
-	
-	while((byte = fread(buf, 1, block, fp)) > 0) {
-		hc128_encrypt(&ctx, buf, byte, out);
-
-		fwrite(out, 1, byte, fd);
-	}
-  
-	return 0;
-}
-
-// Interface to the library grain.h
-static int
-grain(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-	struct grain_context ctx;
-	uint32_t byte;
-
-	grain_init(&ctx);
- 
-	if(grain_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-		return -1;
-
-	while((byte = fread(buf, 1, block, fp)) > 0) {
-		grain_encrypt(&ctx, buf, byte, out);
-
-		fwrite(out, 1, byte, fd);
-	}
-  
-	return 0;
-}
-
-// Interface to the library mickey.h
-static int
-mickey(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-	struct mickey_context ctx;
-	uint32_t byte;
-
-	mickey_init(&ctx);
- 
-	if(mickey_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-		return -1;
-  
-	while((byte = fread(buf, 1, block, fp)) > 0) {
-		mickey_encrypt(&ctx, buf, byte, out);
-       
-		fwrite(out, 1, byte, fd);
-	}
-  
-	return 0;
-}
-
-// Interface to the library trivium.h
-static int
-trivium(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out)
-{
-	struct trivium_context ctx;
-	uint32_t byte;
-
-	trivium_init(&ctx);
-
-	if(trivium_set_key_and_iv(&ctx, key, keylen, iv, ivlen))
-		return -1;
-  
-	while((byte = fread(buf, 1, block, fp)) > 0) {
-		trivium_encrypt(&ctx, buf, byte, out);
-     
-		fwrite(out, 1, byte, fd);
-	}
-  
-	return 0;
-}
+crypt_t crypt[] = { (crypt_t)salsa_crypt,
+		    (crypt_t)rabbit_crypt,
+		    (crypt_t)hc128_crypt,
+		    (crypt_t)sosemanuk_crypt,
+		    (crypt_t)grain_crypt,
+		    (crypt_t)mickey_crypt,
+		    (crypt_t)trivium_crypt };
 
 // Copy key and IV
 void
@@ -176,6 +60,24 @@ get_key_and_iv(char *k, char *v)
 {
 	memcpy(key, k, keylen);
 	memcpy(iv, v, ivlen);
+}
+
+// Crypting function
+int
+crypt_func(FILE *fp, FILE *fd, void *ctx, int alg)
+{
+	uint8_t buf[BLOCK], out[BLOCK];
+	uint32_t byte;
+
+	if(set[alg](ctx, key, keylen, iv, ivlen))
+		return -1;
+
+	while((byte = fread(buf, 1, BLOCK, fp)) > 0) {
+		crypt[alg](ctx, buf, byte, out);
+		fwrite(out, 1, byte, fd);
+	}
+
+	return 0;
 }
 
 // Manual of the program
@@ -186,8 +88,8 @@ help(void)
 	printf("\nOptions:\n");
 	printf("\t--help(-h) - reference manual\n");
 	printf("\t--algorothm(-a) - selection algorithm:\n");
-	printf("\t\t1 - Salsa\n\t\t2 - Rabbit\n\t\t3 - HC128\n\t\t4 - Sosemanuk\n");
-	printf("\t\t5 - Grain\n\t\t6 - Mickey\n\t\t7 - Trivium\n");
+	printf("\t\t0 - Salsa\n\t\t1 - Rabbit\n\t\t2 - HC128\n\t\t3 - Sosemanuk\n");
+	printf("\t\t4 - Grain\n\t\t5 - Mickey\n\t\t6 - Trivium\n");
 	printf("\t--input(-i) - input file\n");
 	printf("\t--output(-o) - output file\n");
 	printf("\nExample: ./estream -h or ./estream -a 1 -i 1.tx -o 2.txt\n\n");
@@ -198,12 +100,9 @@ int
 main(int argc, char *argv[])
 {
 	FILE *fp, *fd;
+	union context context;
 	char in_file[MAX_FILE], out_file[MAX_FILE], k[256], v[256];
-	uint8_t *buf, *out;
 	int res, alg = 1;
-
-	// Array pointer to the function encrypt/decrypt
-	int (*p[7])(FILE *fp, FILE *fd, uint8_t *buf, uint8_t *out) = { salsa, rabbit, hc128, sosemanuk, grain, mickey, trivium };
 
 	const struct option long_option [] = {
 		{"help",      0, NULL, 'h'},
@@ -232,18 +131,6 @@ main(int argc, char *argv[])
 		}
 	}
 	
-	// Allocates memory for the buffer data
-	if((buf = malloc(sizeof(uint8_t) * block)) == NULL) {
-		printf("Error allocates memory for the buffer data!\n");
-		return 0;
-	}
-
-	// Allocates memory for the output buffer data
-	if((out = malloc(sizeof(uint8_t) * block)) == NULL) {
-		printf("Error allocates memory for the out buffer data!\n");
-		return 0;
-	}
-
 	// Open the input file
 	if((fp = fopen(in_file, "rb+")) == NULL) {
 		printf("Error open the file - %s!\n", in_file);
@@ -268,7 +155,7 @@ main(int argc, char *argv[])
 
 	// Select algorithm
 	switch(alg) {
-	case 1 : if(keylen > 32)
+	case 0 : if(keylen > 32)
 		 	keylen = 32;
 		 
 		 if(ivlen > 8)
@@ -276,12 +163,9 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if((*p[0])(fp, fd, buf, out)) {
-		 	printf("Salsa function failed with error!\n");
-			return 0;
-		   }
+		 res = crypt_func(fp, fd, &(context.salsa), alg);
 		 break;
-	case 2 : if(keylen > 16)
+	case 1 : if(keylen > 16)
 		   	keylen = 16;
 		 
 		 if(ivlen > 8)
@@ -289,12 +173,9 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if((*p[1])(fp, fd, buf, out)) {
-		 	printf("Rabbit function failed with error!\n");
-			return 0;
-		 }
+		 res = crypt_func(fp, fd, &(context.rabbit), alg);
 		 break;
-	case 3 : if(keylen > 16)
+	case 2 : if(keylen > 16)
 		   	keylen = 16;
 
 		 if(ivlen > 16)
@@ -302,12 +183,9 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if((*p[2])(fp, fd, buf, out)) {
-		   	printf("HC128 function failed with error!\n");
-			return 0;
-		 }
+		 res = crypt_func(fp, fd, &(context.hc128), alg);
 		 break;
-	case 4 : if(keylen > 32)
+	case 3 : if(keylen > 32)
 		   	keylen = 32;
 
 		 if(ivlen > 16)
@@ -315,12 +193,9 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if((*p[3])(fp, fd, buf, out)) {
-		   	printf("Sosemanuk function failed with error!\n");
-			return 0;
-		 }
+		 res = crypt_func(fp, fd, &(context.sosemanuk), alg);
 		 break;
-	case 5 : if(keylen > 16)
+	case 4 : if(keylen > 16)
 		   	keylen = 16;
 
 		 if(ivlen > 12)
@@ -328,12 +203,9 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if((*p[4])(fp, fd, buf, out)) {
-		   	printf("Grain function failed with error!\n");
-			return 0;
-		 }
+		 res = crypt_func(fp, fd, &(context.grain), alg);
 		 break;
-	case 6 : if(keylen > 10)
+	case 5 : if(keylen > 10)
 		   	keylen = 10;
 
 		 if(ivlen > 10)
@@ -341,12 +213,9 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if((*p[5])(fp, fd, buf, out)) {
-		   	printf("Mickey function failed with error!\n");
-			return 0;
-		 }
+		 res = crypt_func(fp, fd, &(context.mickey), alg);
 		 break;
-	case 7 : if(keylen > 10)
+	case 6 : if(keylen > 10)
 		   	keylen = 10;
 		 
 		 if(ivlen > 10)
@@ -354,10 +223,7 @@ main(int argc, char *argv[])
 
 		 get_key_and_iv(k, v);
 
-		 if((*p[6])(fp, fd, buf, out)) {
-		   	printf("Trivium function failed with error!\n");
-			return 0;
-		 }
+		 res = crypt_func(fp, fd, &(context.trivium), alg);
 		 break;
 	default: printf("\nNo such algorithm!\n");
 		 break;
@@ -365,9 +231,11 @@ main(int argc, char *argv[])
 
 	fclose(fp);
 	fclose(fd);
-	
-	free(buf);
-	free(out);
+
+	if (res == -1)
+		printf("Error in crypting! Exit...\n");
+	else
+		printf("Completed succesfully! Exit...\n");
 
 	return 0;
 }

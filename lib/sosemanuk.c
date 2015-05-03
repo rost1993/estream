@@ -17,10 +17,35 @@
 #include <string.h>
 
 #include "sosemanuk.h"
-#include "macro.h"
 
 // Maximum Sosemanuk key length in bytes
 #define SOSEMANUK	32
+
+// Selecting the byte order
+#if __BYTE_ORDER == BIG_ENDIAN
+#define U32TO32(x)								\
+	((x << 24) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | (x >> 24))
+#elif __BYTE_ORDER == LITTLE_ENDIAN
+#define U32TO32(x)	(x)
+#else
+#error unsupported byte 
+#endif
+
+// Little-endian 4 uint8_t in the uint32_t
+#define U8TO32_LITTLE(p) 						\
+	(((uint32_t)((p)[0])     ) | ((uint32_t)((p)[1]) << 8) |	\
+	((uint32_t)((p)[2]) << 16) | ((uint32_t)((p)[3]) << 24))
+
+// Little-endian uint32_t in the 4 uint8_t
+#define U32TO8_LITTLE(dst, val) {	\
+	dst[0] = val;			\
+	dst[1] = val >> 8;		\
+	dst[2] = val >> 16;		\
+	dst[3] = val >> 24;		\
+}
+
+// Cyclic shift
+#define ROTL32(v, n)	((v << n) | (v >> (32 - n)))
 
 // Serpent S-boxes, implemented in bitslice mode.
 // These circuits have been published by Dag Arne Osvik ("Speeding up Serpent"). 
@@ -391,7 +416,7 @@ uint32_t mul_ia[] = {
 
 
 // Sosemanuk initialization function
-void
+static void
 sosemanuk_init(struct sosemanuk_context *ctx)
 {
 	memset(ctx, 0, sizeof(*ctx));
@@ -502,6 +527,8 @@ sosemanuk_keysetup(struct sosemanuk_context *ctx)
 int
 sosemanuk_set_key_and_iv(struct sosemanuk_context *ctx, const uint8_t *key, const int keylen, const uint8_t iv[16], const int ivlen)
 {
+	sosemanuk_init(ctx);
+
 	if((keylen > 0) && (keylen <= SOSEMANUK))
 		ctx->keylen = keylen;
 	else
@@ -590,14 +617,14 @@ sosemanuk_generate_keystream(struct sosemanuk_context *ctx, uint32_t *keystream)
 }
 
 /*
- * Sosemanuk encrypt function
+ * Sosemanuk crypt function
  * ctx - pointer on sosemanuk_context
  * buf - pointer on buffer data
  * buflen - length the data buffer
  * out - pointer on output
 */
 void
-sosemanuk_encrypt(struct sosemanuk_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
+sosemanuk_crypt(struct sosemanuk_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
 {
 	uint32_t keystream[20];
 	uint32_t i;
@@ -635,14 +662,14 @@ sosemanuk_encrypt(struct sosemanuk_context *ctx, const uint8_t *buf, uint32_t bu
 	}
 }
 
-// Soemanuk decrypt function. See sosemanuk_encrypt
-void
-sosemanuk_decrypt(struct sosemanuk_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-	sosemanuk_encrypt(ctx, buf, buflen, out);
-}
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define PRINT_U32TO32(x) \
+	(printf("%02x %02x %02x %02x ", (x >> 24), ((x >> 16) & 0xFF), ((x >> 8) & 0xFF), (x & 0xFF)))
+#else
+#define PRINT_U32TO32(x) \
+	(printf("%02x %02x %02x %02x ", (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), (x >> 24)))
+#endif
 
-// Test vactors print function
 void
 sosemanuk_test_vectors(struct sosemanuk_context *ctx)
 {

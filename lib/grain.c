@@ -41,7 +41,7 @@
 
 
 // Grain initialization function
-void
+static void
 grain_init(struct grain_context *ctx)
 {
 	memset(ctx, 0, sizeof(*ctx));
@@ -100,6 +100,8 @@ grain_initialization_process(struct grain_context *ctx)
 int
 grain_set_key_and_iv(struct grain_context *ctx, const uint8_t *key, const int keylen, const uint8_t iv[12], const int ivlen)
 {
+	grain_init(ctx);
+
 	if((keylen <= GRAIN) && (keylen > 0))
 		ctx->keylen = keylen * 8;
 	else
@@ -119,14 +121,14 @@ grain_set_key_and_iv(struct grain_context *ctx, const uint8_t *key, const int ke
 }
 
 /*
- * Grain-128 encrypt function
+ * Grain-128 crypt function
  * ctx - pointer on grain_context
  * buf - pointer on buffer data
  * buflen - length the data buffer
  * out - pointer on output buffer
 */
 void
-grain_encrypt(struct grain_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
+grain_crypt(struct grain_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
 {
 	uint8_t k = 0;
 	uint32_t i, j;	
@@ -139,13 +141,6 @@ grain_encrypt(struct grain_context *ctx, const uint8_t *buf, uint32_t buflen, ui
 
 		out[i] = buf[i] ^ k;
 	}
-}
-
-// Grain-128 decrypt function. See grain_encrypt
-void
-grain_decrypt(struct grain_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out)
-{
-	grain_encrypt(ctx, buf, buflen, out);
 }
 
 // Test vectors print

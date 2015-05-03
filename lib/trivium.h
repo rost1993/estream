@@ -23,12 +23,9 @@ struct trivium_context {
 	uint32_t w[10];
 };
 
-void trivium_init(struct trivium_context *ctx);
-
 int trivium_set_key_and_iv(struct trivium_context *ctx, const uint8_t *key, const int keylen, const uint8_t iv[10], const int ivlen);
 
-void trivium_encrypt(struct trivium_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out);
-void trivium_decrypt(struct trivium_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out);
+void trivium_crypt(struct trivium_context *ctx, const uint8_t *buf, uint32_t buflen, uint8_t *out);
 
 void trivium_test_vectors(struct trivium_context *ctx);
 
