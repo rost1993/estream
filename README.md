@@ -9,13 +9,13 @@
 Домашняя страница проекта - http://www.ecrypt.eu.org/stream/
 
 Проект eSTREAM содержит 7 криптографических шифров:
-	- Salsa
-	- Rabbit
-	- HC128
-	- Sosemanuk
-	- Grain
-	- Mickey
-	- Trivium
+- Salsa
+- Rabbit
+- HC128
+- Sosemanuk
+- Grain
+- Mickey
+- Trivium
 
 # Структура репозитория
 
