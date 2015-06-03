@@ -19,27 +19,10 @@
 #include <stdint.h>
 
 #include "salsa.h"
+#include "macro.h"
 
 #define SALSA16		16
 #define	SALSA32		32
-
-#define	ROTL32(v, n)	((v << n) | (v >> (32 - n)))
-
-// Selecting the byte order
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define U32TO32(x)								\
-	((x << 24) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | (x >> 24))
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-#define U32TO32(x)	(x)
-#else
-#error unsupported byte order
-#endif
-
-// Little-endian 4 uint8_t in the uint32_t
-#define U8TO32_LITTLE(p)						\
-	(((uint32_t)((p)[0])      ) | ((uint32_t)((p)[1]) << 8) | 	\
-	 ((uint32_t)((p)[2]) << 16) | ((uint32_t)((p)[3]) << 24))
-
 
 // Initialization function
 static void
@@ -217,14 +200,7 @@ salsa_crypt(struct salsa_context *ctx, const uint8_t *buf, uint32_t buflen, uint
 
 }
 
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define PRINT_U32TO32(x) \
-	(printf("%02x %02x %02x %02x ", (x >> 24), ((x >> 16) & 0xFF), ((x >> 8) & 0xFF), (x & 0xFF)))
-#else
-#define PRINT_U32TO32(x) \
-	(printf("%02x %02x %02x %02x ", (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), (x >> 24)))
-#endif
-
+// Salsa test vectors
 void
 salsa_test_vectors(struct salsa_context *ctx)
 {

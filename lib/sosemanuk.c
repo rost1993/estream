@@ -17,35 +17,10 @@
 #include <string.h>
 
 #include "sosemanuk.h"
+#include "macro.h"
 
 // Maximum Sosemanuk key length in bytes
 #define SOSEMANUK	32
-
-// Selecting the byte order
-#if __BYTE_ORDER == BIG_ENDIAN
-#define U32TO32(x)								\
-	((x << 24) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | (x >> 24))
-#elif __BYTE_ORDER == LITTLE_ENDIAN
-#define U32TO32(x)	(x)
-#else
-#error unsupported byte 
-#endif
-
-// Little-endian 4 uint8_t in the uint32_t
-#define U8TO32_LITTLE(p) 						\
-	(((uint32_t)((p)[0])     ) | ((uint32_t)((p)[1]) << 8) |	\
-	((uint32_t)((p)[2]) << 16) | ((uint32_t)((p)[3]) << 24))
-
-// Little-endian uint32_t in the 4 uint8_t
-#define U32TO8_LITTLE(dst, val) {	\
-	dst[0] = val;			\
-	dst[1] = val >> 8;		\
-	dst[2] = val >> 16;		\
-	dst[3] = val >> 24;		\
-}
-
-// Cyclic shift
-#define ROTL32(v, n)	((v << n) | (v >> (32 - n)))
 
 // Serpent S-boxes, implemented in bitslice mode.
 // These circuits have been published by Dag Arne Osvik ("Speeding up Serpent"). 
@@ -662,14 +637,7 @@ sosemanuk_crypt(struct sosemanuk_context *ctx, const uint8_t *buf, uint32_t bufl
 	}
 }
 
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define PRINT_U32TO32(x) \
-	(printf("%02x %02x %02x %02x ", (x >> 24), ((x >> 16) & 0xFF), ((x >> 8) & 0xFF), (x & 0xFF)))
-#else
-#define PRINT_U32TO32(x) \
-	(printf("%02x %02x %02x %02x ", (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), (x >> 24)))
-#endif
-
+// Sosemanuk test vectors
 void
 sosemanuk_test_vectors(struct sosemanuk_context *ctx)
 {

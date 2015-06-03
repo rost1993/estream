@@ -16,24 +16,9 @@
 #include <string.h>
 
 #include "trivium.h"
+#include "macro.h"
 
 #define TRIVIUM		10
-
-// Selecting the byte order
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define U32TO32(x)								\
-	((x << 24) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | (x >> 24))
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-#define U32TO32(x)	(x)
-#else
-#error unsupported byte order
-#endif
-
-#define U8TO32_LITTLE(p) 	     	\
-	(((uint32_t)((p)[0])) 	   | 	\
-	((uint32_t)((p)[1]) << 8)  | 	\
-	((uint32_t)((p)[2]) << 16) | 	\
-	((uint32_t)((p)[3]) << 24))
 
 // Macros bit allocation
 #define S64(a, b, c)	((a << (96 - c))  | (b >> (c - 64)))
@@ -176,14 +161,6 @@ trivium_crypt(struct trivium_context *ctx, const uint8_t *buf, uint32_t buflen, 
 	
 	memcpy(ctx->w, w, sizeof(w));
 }
-
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define PRINT_U32TO32(x)\
-	(printf("%02x %02x %02x %02x ", (x >> 24), ((x >> 16) & 0xFF), ((x >> 8) & 0xFF), (x & 0xFF)))
-#else
-#define PRINT_U32TO32(x)\
-	(printf("%02x %02x %02x %02x ", (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), (x >> 24)))
-#endif
 
 // Test vectors print
 void
