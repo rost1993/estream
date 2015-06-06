@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-I ../lib -Wall -O3
 LIB=../lib
 
-LIBESTREAM_OBJS=$(patsubst %, $(LIB)/%, grain.o hc128.o mickey.o rabbit.o salsa.o sosemanuk.o trivium.o)
+LIBESTREAM_OBJS=$(patsubst %, $(LIB)/%, grain.o hc128.o mickey.o rabbit.o salsa.o sosemanuk.o trivium.o gost89.o)
 ESTREAM_OBJS=estream.o
 
 LIBESTREAM=libestream.so
