@@ -1,4 +1,20 @@
 /*
+ * Copyright (C) 2015, Rostislav Gashin
+ * <rostislav-gashin@yandex.ru>
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with the program. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>
+ *
  * The file estream.h is the main header file of the eSTREAM project.
  * But it also needs to be included to the project.
  * The home page eSTREAM porject - http://www.estream.eu.org./stream/.
@@ -20,6 +36,8 @@
 #include "grain.h"
 #include "mickey.h"
 #include "trivium.h"
+#include "gost89.h"
+
 #include "macro.h"
 
-#endif
+#endif /* ESTREAM_H */
