@@ -1,0 +1,26 @@
+CC=gcc
+CFLAGS=-I ../lib -I ../lib/hash -Wall -O3
+LIB=../lib
+HASH=../lib/hash
+
+LIBESTREAM_OBJS=$(patsubst %, $(LIB)/%, grain.o hc128.o rabbit.o salsa.o sosemanuk.o trivium.o mickey.o)
+LIBHASH_OBJS=$(patsubst %, $(HASH)/%, md5.o sha1.o sha224.o sha256.o sha384.o sha512.o)
+HASHSUM_OBJS=hashsum.o
+
+LIBESTREAM=libestream.so
+HASHSUM=hashsum
+
+all: $(LIBESTREAM) $(HASHSUM)
+
+.c.o:
+	$(CC) $(CFLAGS) -fPIC -c $^ -o $@
+
+$(LIBESTREAM): $(LIBESTREAM_OBJS) $(LIBHASH_OBJS)
+	$(CC) $(CFLAGS) -shared -o $@ $^
+	rm -f $(LIB)/*.o $(HASH)/*.o
+
+$(HASHSUM): $(HASHSUM_OBJS)
+	$(CC) $(CFLAGS) -L./ -lestream -Wl,-rpath,. -o $@ $^
+
+clean:
+	rm -f $(LIB)/*.o $(HASH)/*.o $(HASHSUM) $(LIBESTREAM)
